@@ -54,11 +54,13 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
 .row.hidden{max-height:0;margin:0;opacity:0;pointer-events:none;}
 .check{width:30px;padding-top:11px;display:flex;justify-content:center;flex-shrink:0;cursor:pointer;}
 .cb{width:18px;height:18px;border-radius:50%;border:2px solid var(--muted);background:var(--card);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;transition:all .2s;cursor:pointer;}
-.cb.on{border-color:var(--green);background:var(--green);}
+.cb.prog{border-color:var(--amber);background:var(--card);color:var(--amber);}
+.cb.on{border-color:var(--green);background:var(--green);color:#fff;}
 .crd{flex:1;padding:10px 14px;border-radius:8px;cursor:pointer;transition:background .12s;}
 .crd:hover{background:var(--hover);}
 .crd.sel{background:#F0EEFF;}
 .crd-name{font-size:15px;font-weight:500;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+.crd-name.prog{color:var(--amber);}
 .crd-name.done{text-decoration:line-through;color:var(--muted);}
 .crd-top{display:flex;align-items:center;gap:10px;}
 .meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);flex-shrink:0;}
@@ -71,7 +73,9 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
 .it.fading{opacity:.08;background:rgba(0,200,117,.05);border-radius:4px;}
 .it.tdone{opacity:.3;}
 .it-cb{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--muted);background:var(--card);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;transition:all .2s;cursor:pointer;flex-shrink:0;}
-.it-cb.on{border-color:var(--green);background:var(--green);}
+.it-cb.prog{border-color:var(--amber);background:var(--card);color:var(--amber);}
+.it-cb.on{border-color:var(--green);background:var(--green);color:#fff;}
+.it span.prog{color:var(--amber);}
 .it span.dn{color:var(--muted);text-decoration:line-through;}
 
 /* Modal */
@@ -128,10 +132,69 @@ function ps(p){s.p=p;s.sy="saving";R();if(svT)clearTimeout(svT);svT=setTimeout(a
 (async()=>{try{const d=await lb();s.p=d.length?d:DF;if(!d.length)await sb(DF);s.sy="synced";}catch{s.p=DF;s.sy="error";}s.ok=true;R();document.addEventListener("keydown",onK);})();
 
 function up(id,x){s.p=s.p.map(p=>p.id===id?{...p,...x}:p);ps(s.p);}
-function togP(id){const p=s.p.find(x=>x.id===id);if(!p)return;if(s.fp.has(id)){fpR.delete(id);s.fp.delete(id);R();return;}if(p.status==="Done"){up(id,{status:"To Do"});return;}fpR.add(id);s.fp.add(id);R();setTimeout(()=>{if(!fpR.has(id))return;fpR.delete(id);s.fp.delete(id);up(id,{status:"Done"});},5000);}
-function togT(pid,i){const k=pid+"-"+i,p=s.p.find(x=>x.id===pid),t=(p?.tasks||[])[i];if(!t)return;if(s.ft.has(k)){ftR.delete(k);s.ft.delete(k);R();return;}if(t.done){const ts=[...p.tasks];ts[i]={...ts[i],done:false};up(pid,{tasks:ts});return;}ftR.add(k);s.ft.add(k);R();setTimeout(()=>{if(!ftR.has(k))return;ftR.delete(k);s.ft.delete(k);const p2=s.p.find(x=>x.id===pid),ts=[...(p2?.tasks||[])];if(ts[i]&&!ts[i].done)ts[i]={...ts[i],done:true};up(pid,{tasks:ts});},3000);}
+// Task status helper (backward compat: done:true → "done", done:false → "todo")
+function tSt(t){return t.st||(t.done?"done":"todo");}
+function setTSt(t,st){return {text:t.text,date:t.date,st:st,done:st==="done"};}
+
+// Project: To Do → In Progress (immediate) → Done (5s delay) → To Do (immediate)
+function togP(id){
+  const p=s.p.find(x=>x.id===id);if(!p)return;
+  // Cancel fading
+  if(s.fp.has(id)){fpR.delete(id);s.fp.delete(id);R();return;}
+  if(p.status==="To Do"){
+    up(id,{status:"In Progress"});
+  } else if(p.status==="In Progress"){
+    // Start fade → Done after 5s, cascade all tasks to done
+    fpR.add(id);s.fp.add(id);R();
+    setTimeout(()=>{if(!fpR.has(id))return;fpR.delete(id);s.fp.delete(id);
+      const cur=s.p.find(x=>x.id===id);
+      const ts=(cur?.tasks||[]).map(t=>setTSt(t,"done"));
+      up(id,{status:"Done",tasks:ts});
+    },5000);
+  } else {
+    // Done → To Do, cascade all tasks to todo
+    const ts=(p.tasks||[]).map(t=>setTSt(t,"todo"));
+    up(id,{status:"To Do",tasks:ts});
+  }
+}
+
+// Check if all tasks done → auto-promote parent to Done
+function checkAllDone(pid){
+  const p=s.p.find(x=>x.id===pid);
+  if(!p||!p.tasks||!p.tasks.length)return;
+  if(p.tasks.every(t=>tSt(t)==="done")&&p.status!=="Done"){
+    fpR.add(pid);s.fp.add(pid);R();
+    setTimeout(()=>{if(!fpR.has(pid))return;fpR.delete(pid);s.fp.delete(pid);up(pid,{status:"Done"});},5000);
+  }
+}
+
+// Task: todo → progress (immediate) → done (3s delay) → todo (immediate)
+function togT(pid,i){
+  const k=pid+"-"+i,p=s.p.find(x=>x.id===pid),t=(p?.tasks||[])[i];if(!t)return;
+  const st=tSt(t);
+  // Cancel fading
+  if(s.ft.has(k)){ftR.delete(k);s.ft.delete(k);R();return;}
+  if(st==="todo"){
+    // → progress (immediate)
+    const ts=[...p.tasks];ts[i]=setTSt(t,"progress");
+    up(pid,{tasks:ts});
+    // If project was To Do, promote to In Progress
+    if(p.status==="To Do")up(pid,{status:"In Progress"});
+  } else if(st==="progress"){
+    // → done (3s delay)
+    ftR.add(k);s.ft.add(k);R();
+    setTimeout(()=>{if(!ftR.has(k))return;ftR.delete(k);s.ft.delete(k);
+      const p2=s.p.find(x=>x.id===pid),ts=[...(p2?.tasks||[])];
+      if(ts[i]&&tSt(ts[i])!=="done")ts[i]=setTSt(ts[i],"done");
+      up(pid,{tasks:ts});checkAllDone(pid);
+    },3000);
+  } else {
+    // done → todo (immediate)
+    const ts=[...p.tasks];ts[i]=setTSt(t,"todo");up(pid,{tasks:ts});
+  }
+}
 function qadd(){if(!s.an.trim())return;const n={id:gid(),name:s.an.trim(),status:"To Do",tasks:[],notes:[]};ps([n,...s.p]);s.an="";s.ed=n.id;s.nk="";s.nt="";R();setTimeout(()=>{const el=document.getElementById("qi");if(el)el.value="";},50);}
-function atk(){if(!s.nk.trim()||!s.ed)return;const p=s.p.find(x=>x.id===s.ed);up(s.ed,{tasks:[...(p.tasks||[]),{text:s.nk.trim(),done:false,date:td()}]});s.nk="";R();}
+function atk(){if(!s.nk.trim()||!s.ed)return;const p=s.p.find(x=>x.id===s.ed);up(s.ed,{tasks:[...(p.tasks||[]),{text:s.nk.trim(),st:"todo",done:false,date:td()}]});s.nk="";R();}
 function ant(){if(!s.nt.trim()||!s.ed)return;const p=s.p.find(x=>x.id===s.ed);up(s.ed,{notes:[{date:td(),text:s.nt.trim()},...(p.notes||[])]});s.nt="";R();}
 function cfm(m,f){s.cm=m;s.cf=f;R();}
 function xcfm(){s.cm=null;s.cf=null;R();}
@@ -155,26 +218,40 @@ function onK(e){
 function h(t,p,...k){const e=document.createElement(t);if(p)Object.entries(p).forEach(([a,v])=>{if(a==="style"&&typeof v==="object")Object.assign(e.style,v);else if(a.startsWith("on"))e.addEventListener(a.slice(2).toLowerCase(),v);else if(a==="className")e.className=v;else e.setAttribute(a,v);});k.flat(9).forEach(c=>{if(c!=null)e.append(typeof c==="string"?document.createTextNode(c):c);});return e;}
 
 function mkRow(p){
-  const ts=p.tasks||[],dc=ts.filter(t=>t.done).length;
-  const pf=s.fp.has(p.id),pc=p.status==="Done"||pf,isSel=s.sel.has(p.id);
+  const ts=p.tasks||[],dc=ts.filter(t=>tSt(t)==="done").length,pc_count=ts.filter(t=>tSt(t)==="progress").length;
+  const pf=s.fp.has(p.id),pc=p.status==="Done"||pf,pip=p.status==="In Progress";
+  const isSel=s.sel.has(p.id);
   const row=h("div",{className:"row"+(pf?" fading":"")});
-  row.append(h("div",{className:"check",onClick:e=>{e.stopPropagation();togP(p.id);}},h("div",{className:"cb"+(pc?" on":"")},pc?"✓":"")));
+
+  // Project checkbox: 3 states
+  const cbCls=pc?"cb on":pip?"cb prog":"cb";
+  const cbTxt=pc?"✓":pip?"–":"";
+  row.append(h("div",{className:"check",onClick:e=>{e.stopPropagation();togP(p.id);}},h("div",{className:cbCls},cbTxt)));
+
   const c=h("div",{className:"crd"+(isSel?" sel":""),onClick:()=>{
     if(s.sel.size){s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);R();}
     else{s.ed=p.id;s.nk="";s.nt="";R();}}});
   c.oncontextmenu=e=>{e.preventDefault();s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);R();};
+
   const top=h("div",{className:"crd-top"});
-  const name=h("span",{className:"crd-name"+(pc?" done":"")},p.name);
+  const nameCls=pc?"crd-name done":pip?"crd-name prog":"crd-name";
+  const name=h("span",{className:nameCls},p.name);
   const meta=h("div",{className:"meta"});
   if(ts.length){const pg=h("div",{className:"prog"});pg.append(h("div",{className:"prog-f",style:{width:(dc/ts.length*100)+"%",background:dc===ts.length?"var(--green)":"var(--amber)"}}));meta.append(pg,h("span",{},dc+"/"+ts.length));}
   if((p.notes||[]).length)meta.append(h("span",{},"💬"+p.notes.length));
   top.append(name,meta);c.append(top);
+
   if(ts.length){
     const itd=h("div",{className:"itasks"});
     ts.forEach((t,i)=>{
-      const k=p.id+"-"+i,fg=s.ft.has(k),ck=t.done||fg;
-      const it=h("div",{className:"it"+(fg?" fading":"")+(!fg&&t.done?" tdone":"")});
-      it.append(h("div",{className:"it-cb"+(ck?" on":""),onClick:e=>{e.stopPropagation();togT(p.id,i);}},ck?"✓":""),h("span",{className:ck?"dn":""},t.text));
+      const k=p.id+"-"+i,fg=s.ft.has(k),st=tSt(t);
+      const isDone=st==="done"||fg;
+      const isProg=st==="progress"&&!fg;
+      const it=h("div",{className:"it"+(fg?" fading":"")+(!fg&&st==="done"?" tdone":"")});
+      const cbCls2=isDone?"it-cb on":isProg?"it-cb prog":"it-cb";
+      const cbTxt2=isDone?"✓":isProg?"–":"";
+      const spanCls=isDone?"dn":isProg?"prog":"";
+      it.append(h("div",{className:cbCls2,onClick:e=>{e.stopPropagation();togT(p.id,i);}},cbTxt2),h("span",{className:spanCls},t.text));
       itd.append(it);
     });c.append(itd);
   }
@@ -281,7 +358,7 @@ function R(){
 
 function rEdit(){
   const p=s.p.find(x=>x.id===s.ed);if(!p)return;
-  const ts=p.tasks||[],dc=ts.filter(t=>t.done).length;
+  const ts=p.tasks||[],dc=ts.filter(t=>tSt(t)==="done").length;
   const ov=h("div",{className:"ov",onClick:()=>{s.ed=null;R();}});
   const m=h("div",{className:"mod",onClick:e=>e.stopPropagation()});
   m.append(h("div",{className:"mod-hdr"},h("h3",{},p.name),h("button",{className:"mod-x",onClick:()=>{s.ed=null;R();}},"✕")));
@@ -301,19 +378,25 @@ function rEdit(){
   const th=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}});
   th.append(h("label",{style:{margin:"0"}},"Tâches"+(ts.length?" ("+dc+"/"+ts.length+")":"")));
   const tbs=h("div",{style:{display:"flex",gap:"6px"}});
-  if(dc)tbs.append(h("button",{className:"btn-t",onClick:()=>up(p.id,{tasks:ts.filter(t=>!t.done)})},"✓ Terminées"));
+  if(dc)tbs.append(h("button",{className:"btn-t",onClick:()=>up(p.id,{tasks:ts.filter(t=>tSt(t)!=="done")})},"✓ Terminées"));
   if(ts.length>1)tbs.append(h("button",{className:"btn-t",onClick:()=>cfm("Vider les tâches ?",()=>up(p.id,{tasks:[]}))},"🗑"));
   th.append(tbs);
   const tir=h("div",{style:{display:"flex",gap:"6px",marginBottom:"8px"}});
   tir.append(h("input",{id:"ti",value:s.nk,placeholder:"Nouvelle tâche…",onInput:e=>{s.nk=e.target.value;},onKeydown:e=>{if(e.key==="Enter")atk();}}),h("button",{className:"btn btn-a",style:{padding:"8px 14px"},onClick:atk},"+"));
   const tl=h("div",{style:{display:"flex",flexDirection:"column",gap:"1px",maxHeight:"200px",overflowY:"auto"}});
   ts.forEach((t,i)=>{
-    const k=p.id+"-"+i,fg=s.ft.has(k),ck=t.done||fg;
+    const k=p.id+"-"+i,fg=s.ft.has(k),st=tSt(t);
+    const isDone=st==="done"||fg;
+    const isProg=st==="progress"&&!fg;
     const tr=h("div",{className:"tr"+(fg?" fading":"")});
-    tr.style.background=!fg&&t.done?"rgba(0,200,117,.04)":"transparent";
+    tr.style.background=!fg&&st==="done"?"rgba(0,200,117,.04)":!fg&&st==="progress"?"rgba(253,171,61,.04)":"transparent";
+    const cbCls=isDone?"it-cb on":isProg?"it-cb prog":"it-cb";
+    const cbTxt=isDone?"✓":isProg?"–":"";
+    const txtCol=isDone?"var(--muted)":isProg?"var(--amber)":"var(--text)";
+    const txtDec=isDone?"line-through":"none";
     tr.append(
-      h("div",{className:"it-cb"+(ck?" on":""),onClick:()=>togT(p.id,i)},ck?"✓":""),
-      h("span",{style:{flex:"1",color:ck?"var(--muted)":"var(--text)",textDecoration:ck?"line-through":"none",fontSize:"13px"}},t.text),
+      h("div",{className:cbCls,onClick:()=>togT(p.id,i)},cbTxt),
+      h("span",{style:{flex:"1",color:txtCol,textDecoration:txtDec,fontSize:"13px"}},t.text),
       h("span",{style:{fontSize:"10px",color:"var(--muted)",fontFamily:"monospace",whiteSpace:"nowrap"}},t.date),
       h("button",{className:"rm",onClick:()=>{const x=[...ts];x.splice(i,1);up(p.id,{tasks:x});}},"×"));
     tl.append(tr);
@@ -346,7 +429,7 @@ function rEdit(){
 function rExp(){
   let md="# Projets\n\n";
   const g={"In Progress":[],"To Do":[],"Done":[]};s.p.forEach(p=>{if(g[p.status])g[p.status].push(p);});
-  for(const[x,items]of Object.entries(g)){if(!items.length)continue;md+="## "+x+" ("+items.length+")\n\n";items.forEach(p=>{md+="### "+p.name+"\n";if(p.tasks?.length){p.tasks.forEach(t=>{md+="- ["+(t.done?"x":" ")+"] "+t.text+"\n";});}if(p.notes?.length){p.notes.forEach(n=>{md+="  - "+n.date+" "+n.text+"\n";});}md+="\n";});}
+  for(const[x,items]of Object.entries(g)){if(!items.length)continue;md+="## "+x+" ("+items.length+")\n\n";items.forEach(p=>{md+="### "+p.name+"\n";if(p.tasks?.length){p.tasks.forEach(t=>{md+="- ["+(tSt(t)==="done"?"x":tSt(t)==="progress"?"/":" ")+"] "+t.text+"\n";});}if(p.notes?.length){p.notes.forEach(n=>{md+="  - "+n.date+" "+n.text+"\n";});}md+="\n";});}
   const ov=h("div",{className:"ov",onClick:()=>{s.exp=false;R();}});
   const m=h("div",{className:"mod",onClick:e=>e.stopPropagation()});
   m.append(h("div",{className:"mod-hdr"},h("h3",{},"Export Markdown"),h("button",{className:"mod-x",onClick:()=>{s.exp=false;R();}},"✕")));
