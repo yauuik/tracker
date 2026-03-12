@@ -209,14 +209,14 @@ function render(){
   filtered.forEach(p=>{
     const ts=p.tasks||[],dc=ts.filter(t=>t.done).length,pf=s.fadP.has(p.id),pc=p.status==="Done"||pf,isSel=s.sel.has(p.id);
     const row=h("div",{className:`card-row${pf?" fading":""}${!pf&&p.status==="Done"?" proj-done":""}`});
-    row.append(h("div",{className:"card-check",onClick:e=>{e.stopPropagation();togProjDone(p.id);}},h("div",{className:`cb${pc?" checked":""`},pc?"✓":"")));
+    row.append(h("div",{className:"card-check",onClick:e=>{e.stopPropagation();togProjDone(p.id);}},h("div",{className:`cb${pc?" checked":""}`},pc?"✓":"")));
     const card=h("div",{className:`card${isSel?" selected":""}`,onClick:()=>{if(s.sel.size){s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);render();}else{s.editId=p.id;s.newTask="";s.newNote="";render();}}});
     card.oncontextmenu=e=>{e.preventDefault();s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);render();};
 
     const top=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"8px"}});
     const left=h("div",{style:{flex:"1",minWidth:"0"}});
     const tRow=h("div",{style:{display:"flex",alignItems:"center",gap:"8px"}});
-    tRow.append(h("span",{className:`card-title${pc?" done":""`},p.name));
+    tRow.append(h("span",{className:`card-title${pc?" done":""}`},p.name));
     if((p.notes||[]).length)tRow.append(h("span",{style:{fontSize:"10px",color:"var(--text-muted)",flexShrink:"0"}},"💬 "+p.notes.length));
     left.append(tRow);
     if(ts.length){
