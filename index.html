@@ -47,11 +47,8 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
 
 /* Cards */
 .cards{display:flex;flex-direction:column;gap:1px;}
-.row{display:flex;align-items:flex-start;transition:opacity .8s ease-out,max-height .5s ease-out,margin .3s ease-out,transform .4s ease-out;overflow:hidden;transform:translateY(0);}
-.row.fading{opacity:.15;}
-.row.sliding-up{transform:translateY(-8px);opacity:.6;}
-.row.sliding-down{transform:translateY(8px);opacity:.6;}
-.row.hidden{max-height:0;margin:0;opacity:0;pointer-events:none;}
+.row{display:flex;align-items:flex-start;transition:opacity 3s ease-out;overflow:hidden;}
+.row.fading{opacity:.12;}
 .check{width:30px;padding-top:11px;display:flex;justify-content:center;flex-shrink:0;cursor:pointer;}
 .cb{width:18px;height:18px;border-radius:50%;border:2px solid var(--muted);background:var(--card);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;transition:all .2s;cursor:pointer;}
 .cb.prog{border-color:var(--amber);background:var(--card);color:var(--amber);}
@@ -218,14 +215,17 @@ function onK(e){
 function h(t,p,...k){const e=document.createElement(t);if(p)Object.entries(p).forEach(([a,v])=>{if(a==="style"&&typeof v==="object")Object.assign(e.style,v);else if(a.startsWith("on"))e.addEventListener(a.slice(2).toLowerCase(),v);else if(a==="className")e.className=v;else e.setAttribute(a,v);});k.flat(9).forEach(c=>{if(c!=null)e.append(typeof c==="string"?document.createTextNode(c):c);});return e;}
 
 function mkRow(p){
-  const ts=p.tasks||[],dc=ts.filter(t=>tSt(t)==="done").length,pc_count=ts.filter(t=>tSt(t)==="progress").length;
-  const pf=s.fp.has(p.id),pc=p.status==="Done"||pf,pip=p.status==="In Progress";
+  const ts=p.tasks||[];
+  const pf=s.fp.has(p.id); // parent is fading to Done
+  const dc=ts.filter(t=>tSt(t)==="done").length;
+  const pc=p.status==="Done", pip=p.status==="In Progress";
+  const showDone=pc||pf;
   const isSel=s.sel.has(p.id);
   const row=h("div",{className:"row"+(pf?" fading":"")});
 
-  // Project checkbox: 3 states
-  const cbCls=pc?"cb on":pip?"cb prog":"cb";
-  const cbTxt=pc?"✓":pip?"–":"";
+  // Project checkbox: fading shows as checked
+  const cbCls=showDone?"cb on":pip?"cb prog":"cb";
+  const cbTxt=showDone?"✓":pip?"–":"";
   row.append(h("div",{className:"check",onClick:e=>{e.stopPropagation();togP(p.id);}},h("div",{className:cbCls},cbTxt)));
 
   const c=h("div",{className:"crd"+(isSel?" sel":""),onClick:()=>{
@@ -234,10 +234,15 @@ function mkRow(p){
   c.oncontextmenu=e=>{e.preventDefault();s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);R();};
 
   const top=h("div",{className:"crd-top"});
-  const nameCls=pc?"crd-name done":pip?"crd-name prog":"crd-name";
+  const nameCls=showDone?"crd-name done":pip?"crd-name prog":"crd-name";
   const name=h("span",{className:nameCls},p.name);
   const meta=h("div",{className:"meta"});
-  if(ts.length){const pg=h("div",{className:"prog"});pg.append(h("div",{className:"prog-f",style:{width:(dc/ts.length*100)+"%",background:dc===ts.length?"var(--green)":"var(--amber)"}}));meta.append(pg,h("span",{},dc+"/"+ts.length));}
+  if(ts.length){
+    const allDone=pf?ts.length:dc;
+    const pg=h("div",{className:"prog"});
+    pg.append(h("div",{className:"prog-f",style:{width:(allDone/ts.length*100)+"%",background:(pf||dc===ts.length)?"var(--green)":"var(--amber)"}}));
+    meta.append(pg,h("span",{},allDone+"/"+ts.length));
+  }
   if((p.notes||[]).length)meta.append(h("span",{},"💬"+p.notes.length));
   top.append(name,meta);c.append(top);
 
@@ -245,13 +250,14 @@ function mkRow(p){
     const itd=h("div",{className:"itasks"});
     ts.forEach((t,i)=>{
       const k=p.id+"-"+i,fg=s.ft.has(k),st=tSt(t);
-      const isDone=st==="done"||fg;
-      const isProg=st==="progress"&&!fg;
-      const it=h("div",{className:"it"+(fg?" fading":"")+(!fg&&st==="done"?" tdone":"")});
+      // Parent fading → all tasks show as done
+      const isDone=pf||st==="done"||fg;
+      const isProg=!pf&&st==="progress"&&!fg;
+      const it=h("div",{className:"it"+(fg?" fading":"")+(!fg&&!pf&&st==="done"?" tdone":"")});
       const cbCls2=isDone?"it-cb on":isProg?"it-cb prog":"it-cb";
       const cbTxt2=isDone?"✓":isProg?"–":"";
       const spanCls=isDone?"dn":isProg?"prog":"";
-      it.append(h("div",{className:cbCls2,onClick:e=>{e.stopPropagation();togT(p.id,i);}},cbTxt2),h("span",{className:spanCls},t.text));
+      it.append(h("div",{className:cbCls2,onClick:e=>{e.stopPropagation();if(!pf)togT(p.id,i);}},cbTxt2),h("span",{className:spanCls},t.text));
       itd.append(it);
     });c.append(itd);
   }
@@ -277,11 +283,10 @@ function R(){
   const scM={synced:{c:"var(--green)",t:"✓"},saving:{c:"var(--amber)",t:"⟳"},error:{c:"var(--red)",t:"✕"},loading:{c:"var(--blue)",t:"…"}};
   const sc=scM[s.sy]||scM.synced;
 
-  // Split projects by status (fading ones stay in their current group)
-  const inProg=s.p.filter(p=>p.status==="In Progress"&&!s.fp.has(p.id));
-  const toDo=s.p.filter(p=>p.status==="To Do"&&!s.fp.has(p.id));
-  const done=s.p.filter(p=>p.status==="Done"&&!s.fp.has(p.id));
-  const fading=s.p.filter(p=>s.fp.has(p.id));
+  // Split projects by current status — fading ones stay in their section
+  const inProg=s.p.filter(p=>p.status==="In Progress");
+  const toDo=s.p.filter(p=>p.status==="To Do");
+  const done=s.p.filter(p=>p.status==="Done");
 
   const w=h("div",{className:"wrap"});
 
@@ -316,22 +321,18 @@ function R(){
   }
 
   // ── In Progress section
-  if(inProg.length||fading.filter(p=>s.p.find(x=>x.id===p.id)?.status!=="Done").length){
-    const ipItems=[...inProg,...fading.filter(p=>{const orig=s.p.find(x=>x.id===p.id);return orig&&orig.status==="In Progress";})];
-    if(ipItems.length){
-      w.append(mkSecHdr("In Progress","#FDAB3D",ipItems.length));
-      const cards=h("div",{className:"cards"});
-      ipItems.forEach(p=>cards.append(mkRow(p)));
-      w.append(cards);
-    }
+  if(inProg.length){
+    w.append(mkSecHdr("In Progress","#FDAB3D",inProg.length));
+    const cards=h("div",{className:"cards"});
+    inProg.forEach(p=>cards.append(mkRow(p)));
+    w.append(cards);
   }
 
-  // ── To Do section (includes fading items that were To Do)
-  const tdItems=[...toDo,...fading.filter(p=>{const orig=s.p.find(x=>x.id===p.id);return orig&&orig.status==="To Do";})];
-  if(tdItems.length){
-    w.append(mkSecHdr("To Do","#0086C0",tdItems.length));
+  // ── To Do section
+  if(toDo.length){
+    w.append(mkSecHdr("To Do","#0086C0",toDo.length));
     const cards=h("div",{className:"cards"});
-    tdItems.forEach(p=>cards.append(mkRow(p)));
+    toDo.forEach(p=>cards.append(mkRow(p)));
     w.append(cards);
   }
 
@@ -346,7 +347,7 @@ function R(){
   }
 
   // Empty state
-  if(!inProg.length&&!toDo.length&&!done.length&&!fading.length){
+  if(!inProg.length&&!toDo.length&&!done.length){
     w.append(h("div",{className:"empty"},"Aucun projet. Tape ci-dessus pour commencer."));
   }
 
