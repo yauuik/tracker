@@ -188,7 +188,7 @@ function render(){
 
   // Filters
   const fl=h("div",{className:"filters"});
-  ["All","In Progress","To Do","Done"].forEach(f=>{fl.append(h("button",{className:`filter-btn${s.filter===f?" active":""}`,onClick:()=>{s.filter=f;render();}},`${f==="All"?"Tous":f} (${counts[f]||0})`));});
+  ["All","In Progress","To Do","Done"].forEach(f=>{fl.append(h("button",{className:"filter-btn"+(s.filter===f?" active":""),onClick:()=>{s.filter=f;render();}},`${f==="All"?"Tous":f} (${counts[f]||0})`));});
   fl.append(h("button",{className:"btn-tiny",style:{marginLeft:"auto"},onClick:()=>cfm("Réinitialiser ?",()=>{persist(DEFAULTS);s.editId=null;s.sel.clear();})},"↺ Reset"));
   if(!s.sel.size)fl.append(h("button",{className:"btn-tiny",onClick:()=>{filtered.forEach(p=>s.sel.add(p.id));render();}},"☰ Sélect."));
   main.append(fl);
@@ -208,15 +208,15 @@ function render(){
   const list=h("div",{className:"card-list"});
   filtered.forEach(p=>{
     const ts=p.tasks||[],dc=ts.filter(t=>t.done).length,pf=s.fadP.has(p.id),pc=p.status==="Done"||pf,isSel=s.sel.has(p.id);
-    const row=h("div",{className:`card-row${pf?" fading":""}${!pf&&p.status==="Done"?" proj-done":""}`});
-    row.append(h("div",{className:"card-check",onClick:e=>{e.stopPropagation();togProjDone(p.id);}},h("div",{className:`cb${pc?" checked":""}`},pc?"✓":"")));
-    const card=h("div",{className:`card${isSel?" selected":""}`,onClick:()=>{if(s.sel.size){s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);render();}else{s.editId=p.id;s.newTask="";s.newNote="";render();}}});
+    const row=h("div",{className:"card-row"+(pf?" fading":"")+(!pf&&p.status==="Done"?" proj-done":"")});
+    row.append(h("div",{className:"card-check",onClick:e=>{e.stopPropagation();togProjDone(p.id);}},h("div",{className:"cb"+(pc?" checked":"")},pc?"✓":"")));
+    const card=h("div",{className:"card"+(isSel?" selected":""),onClick:()=>{if(s.sel.size){s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);render();}else{s.editId=p.id;s.newTask="";s.newNote="";render();}}});
     card.oncontextmenu=e=>{e.preventDefault();s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);render();};
 
     const top=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"8px"}});
     const left=h("div",{style:{flex:"1",minWidth:"0"}});
     const tRow=h("div",{style:{display:"flex",alignItems:"center",gap:"8px"}});
-    tRow.append(h("span",{className:`card-title${pc?" done":""}`},p.name));
+    tRow.append(h("span",{className:"card-title"+(pc?" done":"")},p.name));
     if((p.notes||[]).length)tRow.append(h("span",{style:{fontSize:"10px",color:"var(--text-muted)",flexShrink:"0"}},"💬 "+p.notes.length));
     left.append(tRow);
     if(ts.length){
@@ -230,8 +230,8 @@ function render(){
       const tl=h("div",{style:{marginTop:"6px",display:"flex",flexDirection:"column",gap:"1px"}});
       ts.forEach((t,i)=>{
         const k=`${p.id}-${i}`,fg=s.fadT.has(k),ck=t.done||fg;
-        const it=h("div",{className:`itask${fg?" fading":""}${!fg&&t.done?" tdone":""}`});
-        it.append(h("div",{className:`cb-sm${ck?" checked":""}`,onClick:e=>{e.stopPropagation();togTask(p.id,i);}},ck?"✓":""),h("span",{className:ck?"done-t":""},t.text));
+        const it=h("div",{className:"itask"+(fg?" fading":"")+(!fg&&t.done?" tdone":"")});
+        it.append(h("div",{className:"cb-sm"+(ck?" checked":""),onClick:e=>{e.stopPropagation();togTask(p.id,i);}},ck?"✓":""),h("span",{className:ck?"done-t":""},t.text));
         tl.append(it);
       });card.append(tl);
     }
@@ -252,12 +252,12 @@ function renderEdit(){
   m.append(h("div",{style:{marginBottom:"12px"}},h("label",{},"Nom"),h("input",{value:p.name,onInput:e=>upd(p.id,{name:e.target.value})})));
 
   const stRow=h("div",{style:{display:"flex",gap:"4px"}});
-  Object.entries(ST).forEach(([x,cfg])=>{stRow.append(h("button",{className:"status-btn",style:{border:p.status===x?`2px solid ${cfg.c}`:"1.5px solid var(--border)",background:p.status===x?cfg.bg:"var(--bg-card)",color:p.status===x?cfg.c:"var(--text-muted)"},onClick:()=>upd(p.id,{status:x})},`${cfg.icon} ${x}`));});
+  Object.entries(ST).forEach(([x,cfg])=>{stRow.append(h("button",{className:"status-btn",style:{border:p.status===x?"2px solid "+cfg.c:"1.5px solid var(--border)",background:p.status===x?cfg.bg:"var(--bg-card)",color:p.status===x?cfg.c:"var(--text-muted)"},onClick:()=>upd(p.id,{status:x})},`${cfg.icon} ${x}`));});
   m.append(h("div",{style:{marginBottom:"12px"}},h("label",{},"Statut"),stRow));
 
   // Tasks
   const tH=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"5px"}});
-  tH.append(h("label",{},`✅ Tâches ${ts.length?`(${dc}/${ts.length})`:""}`));
+  tH.append(h("label",{},"✅ Tâches "+(ts.length?"("+dc+"/"+ts.length+")":"")));
   const tBs=h("div",{style:{display:"flex",gap:"6px"}});
   if(dc)tBs.append(h("button",{className:"btn-tiny",onClick:()=>upd(p.id,{tasks:ts.filter(t=>!t.done)})},"✓ Terminées"));
   if(ts.length>1)tBs.append(h("button",{className:"btn-tiny",onClick:()=>cfm("Supprimer toutes les tâches ?",()=>upd(p.id,{tasks:[]}))},"🗑 Tout"));
@@ -268,8 +268,8 @@ function renderEdit(){
   const tL=h("div",{style:{display:"flex",flexDirection:"column",gap:"2px",maxHeight:"180px",overflowY:"auto"}});
   ts.forEach((t,i)=>{
     const k=`${p.id}-${i}`,fg=s.fadT.has(k),ck=t.done||fg;
-    const tr=h("div",{className:`task-row${fg?" fading":""}`,style:{background:!fg&&t.done?"var(--green-bg)":"transparent"}});
-    tr.append(h("div",{className:`cb-sm${ck?" checked":""}`,onClick:()=>togTask(p.id,i)},ck?"✓":""),
+    const tr=h("div",{className:"task-row"+(fg?" fading":""),style:{background:!fg&&t.done?"var(--green-bg)":"transparent"}});
+    tr.append(h("div",{className:"cb-sm"+(ck?" checked":""),onClick:()=>togTask(p.id,i)},ck?"✓":""),
       h("span",{style:{flex:"1",color:ck?"var(--text-muted)":"var(--text)",textDecoration:ck?"line-through":"none"}},t.text),
       h("span",{className:"mono",style:{fontSize:"9px",color:"var(--text-muted)",whiteSpace:"nowrap"}},t.date),
       h("button",{className:"rm-btn",onClick:()=>{const x=[...ts];x.splice(i,1);upd(p.id,{tasks:x});}},"×"));
