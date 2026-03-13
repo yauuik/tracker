@@ -95,6 +95,7 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
 .btn-t{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;padding:8px;min-height:44px;}
 .btn-t:hover{color:var(--sec);}
 .empty{text-align:center;padding:40px;color:var(--muted);font-size:14px;}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 
 /* Desktop overrides */
 @media(min-width:600px){
@@ -129,7 +130,7 @@ const DF=[
 ];
 
 // ─── State ───
-let s={p:[],ok:false,sy:"loading",ed:null,exp:false,keys:false,cm:null,cf:null,nk:"",an:"",sel:new Set(),doneOpen:false,sh:false,noteEdit:false,syncLog:false};
+let s={p:[],ok:false,sy:"loading",ed:null,exp:false,keys:false,cm:null,cf:null,nk:"",an:"",sel:new Set(),doneOpen:false,sh:false,noteEdit:false};
 let svT=null;
 const syncLogs=[];
 function slog(type,msg){
@@ -417,33 +418,47 @@ function R(){
   const acts=h("div",{style:{display:"flex",gap:"6px",alignItems:"center"}});
   acts.append(
     h("button",{className:"icon-btn",title:"Raccourcis",onClick:()=>{s.keys=true;R();}},"⌨"),
-    h("button",{className:"icon-btn",title:"Export",onClick:()=>{s.exp=true;R();}},"↗"),
-    h("div",{style:{display:"flex",alignItems:"center",justifyContent:"center",width:"28px",height:"28px",borderRadius:"50%",background:sc.c==="var(--green)"?"rgba(0,200,117,.12)":sc.c==="var(--amber)"?"rgba(253,171,61,.12)":"rgba(226,68,92,.12)",color:sc.c,fontSize:"13px",fontWeight:"600",marginLeft:"2px",cursor:"pointer"},onClick:e=>{e.stopPropagation();s.syncLog=!s.syncLog;R();}},sc.c==="var(--green)"?"☁":sc.c==="var(--amber)"?"↑":"!")
+    h("button",{className:"icon-btn",title:"Export",onClick:()=>{s.exp=true;R();}},"↗")
   );
-  tb.append(acts);w.append(tb);
-
-  // Sync log popup
-  if(s.syncLog){
-    const lp=h("div",{style:{background:"var(--card)",border:"1px solid var(--border)",borderRadius:"10px",padding:"12px 14px",marginBottom:"16px",boxShadow:"0 4px 16px rgba(0,0,0,.06)",maxHeight:"180px",overflowY:"auto"}});
-    const lhdr=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}});
-    lhdr.append(h("span",{style:{fontSize:"11px",fontWeight:"600",color:"var(--sec)",textTransform:"uppercase",letterSpacing:".04em"}},"Sync log"),h("span",{style:{fontSize:"10px",color:"var(--muted)",cursor:"pointer"},onClick:()=>{s.syncLog=false;R();}},"✕"));
-    lp.append(lhdr);
-    if(syncLogs.length){
-      const logList=h("div",{style:{display:"flex",flexDirection:"column",gap:"3px"}});
-      [...syncLogs].reverse().forEach(l=>{
-        const iconCol=l.type==="☁"?"var(--green)":l.type==="↑"||l.type==="↓"?"var(--amber)":"var(--red)";
-        logList.append(h("div",{style:{display:"flex",gap:"8px",alignItems:"center",fontSize:"11px",lineHeight:"1.4"}},
-          h("span",{style:{fontFamily:"monospace",color:"var(--muted)",whiteSpace:"nowrap",fontSize:"10px"}},l.ts),
-          h("span",{style:{color:iconCol}},l.type),
-          h("span",{style:{color:"var(--sec)"}},l.msg)
-        ));
-      });
-      lp.append(logList);
-    } else {
-      lp.append(h("div",{style:{fontSize:"11px",color:"var(--muted)",textAlign:"center"}},"Aucun log"));
-    }
-    w.append(lp);
+  // Sync indicator with hover tooltip
+  const syncWrap=h("div",{style:{position:"relative",marginLeft:"2px"}});
+  const syncDot=h("div",{style:{display:"flex",alignItems:"center",justifyContent:"center",width:"28px",height:"28px",borderRadius:"50%",background:sc.c==="var(--green)"?"rgba(0,200,117,.12)":sc.c==="var(--amber)"?"rgba(253,171,61,.12)":"rgba(226,68,92,.12)",color:sc.c,fontSize:"13px",cursor:"default"}});
+  // SVG sync icon
+  const ssvg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  ssvg.setAttribute("width","14");ssvg.setAttribute("height","14");ssvg.setAttribute("viewBox","0 0 16 16");ssvg.setAttribute("fill","none");
+  const sp1=document.createElementNS("http://www.w3.org/2000/svg","path");
+  sp1.setAttribute("d","M2.5 8a5.5 5.5 0 0 1 9.3-4");sp1.setAttribute("stroke","currentColor");sp1.setAttribute("stroke-width","1.8");sp1.setAttribute("stroke-linecap","round");
+  const sp2=document.createElementNS("http://www.w3.org/2000/svg","path");
+  sp2.setAttribute("d","M13.5 8a5.5 5.5 0 0 1-9.3 4");sp2.setAttribute("stroke","currentColor");sp2.setAttribute("stroke-width","1.8");sp2.setAttribute("stroke-linecap","round");
+  const sp3=document.createElementNS("http://www.w3.org/2000/svg","path");
+  sp3.setAttribute("d","M11 2l1 2.5L9.5 5");sp3.setAttribute("stroke","currentColor");sp3.setAttribute("stroke-width","1.5");sp3.setAttribute("stroke-linecap","round");sp3.setAttribute("stroke-linejoin","round");
+  const sp4=document.createElementNS("http://www.w3.org/2000/svg","path");
+  sp4.setAttribute("d","M5 14l-1-2.5 2.5-.5");sp4.setAttribute("stroke","currentColor");sp4.setAttribute("stroke-width","1.5");sp4.setAttribute("stroke-linecap","round");sp4.setAttribute("stroke-linejoin","round");
+  ssvg.append(sp1,sp2,sp3,sp4);
+  if(sc.c==="var(--amber)")ssvg.style.animation="spin .8s linear infinite";
+  syncDot.append(ssvg);
+  // Tooltip
+  const tip=h("div",{style:{position:"absolute",right:"0",top:"36px",background:"var(--dark)",color:"#E6E9EF",borderRadius:"8px",padding:"10px 12px",fontSize:"10px",fontFamily:"monospace",lineHeight:"1.6",whiteSpace:"nowrap",boxShadow:"0 4px 16px rgba(0,0,0,.2)",zIndex:"100",opacity:"0",pointerEvents:"none",transition:"opacity .15s",minWidth:"200px"}});
+  if(syncLogs.length){
+    [...syncLogs].slice(-6).reverse().forEach(l=>{
+      const iconCol=l.type==="☁"||l.type==="↓"?"#50FA7B":l.type==="↑"?"#FFB86C":"#FF5555";
+      tip.append(h("div",{style:{display:"flex",gap:"6px"}},
+        h("span",{style:{color:"#6272A4"}},l.ts),
+        h("span",{style:{color:iconCol}},l.type),
+        h("span",{},l.msg)
+      ));
+    });
+  } else {
+    tip.append(h("div",{},"Aucun log"));
   }
+  syncWrap.append(syncDot,tip);
+  // Hover (desktop)
+  syncWrap.addEventListener("mouseenter",()=>{tip.style.opacity="1";tip.style.pointerEvents="auto";});
+  syncWrap.addEventListener("mouseleave",()=>{tip.style.opacity="0";tip.style.pointerEvents="none";});
+  // Tap (mobile)
+  syncDot.addEventListener("click",e=>{e.stopPropagation();const v=tip.style.opacity==="1";tip.style.opacity=v?"0":"1";tip.style.pointerEvents=v?"none":"auto";if(!v)setTimeout(()=>{tip.style.opacity="0";tip.style.pointerEvents="none";},3000);});
+  acts.append(syncWrap);
+  tb.append(acts);w.append(tb);
 
   // Quick input
   const qi=h("div",{className:"quick"});
