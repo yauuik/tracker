@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Tasker</title>
+<title>Task.r</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -406,7 +406,7 @@ function R(){
 
   // Topbar
   const tb=h("div",{className:"topbar"});
-  tb.append(h("div",{style:{display:"flex",alignItems:"center"}},h("h1",{},"Tasker"),h("span",{className:"sync",style:{color:sc.c}},sc.t)));
+  tb.append(h("div",{style:{display:"flex",alignItems:"center"}},h("h1",{},"Task.r"),h("span",{className:"sync",style:{color:sc.c}},sc.t)));
   const acts=h("div",{style:{display:"flex",gap:"6px"}});
   acts.append(
     h("button",{className:"icon-btn",title:"Raccourcis",onClick:()=>{s.keys=true;R();}},"⌨"),
