@@ -22,8 +22,8 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
 .topbar h1{font-size:28px;font-weight:700;color:var(--dark);letter-spacing:-.04em;}
 .topbar .sync{font-size:10px;font-weight:600;margin-left:8px;}
-.icon-btn{width:32px;height:32px;border-radius:8px;border:none;background:transparent;color:var(--sec);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:background .15s;}
-.icon-btn:hover{background:var(--hover);}
+.icon-btn{width:28px;height:28px;border-radius:6px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.icon-btn:hover{background:var(--hover);color:var(--sec);}
 
 .quick{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:24px;transition:border-color .2s,box-shadow .2s;box-shadow:0 1px 3px rgba(0,0,0,.03);}
 .quick:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(97,97,255,.1);}
@@ -65,7 +65,7 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
 .prog-f{height:100%;border-radius:2px;transition:width .3s;}
 
 .itasks{margin-top:2px;display:flex;flex-direction:column;margin-left:10px;padding-left:18px;border-left:1.5px dashed var(--muted);position:relative;}
-.it{display:flex;align-items:center;gap:7px;padding:6px 0;font-size:13px;color:var(--sec);min-height:36px;position:relative;}
+.it{display:flex;align-items:center;gap:7px;padding:6px 0;font-size:14px;color:var(--sec);min-height:36px;position:relative;}
 .it::before{content:"";position:absolute;left:-18px;top:50%;width:14px;height:0;border-top:1.5px dashed var(--muted);}
 .itasks>.it:last-child::after{content:"";position:absolute;left:-19.5px;top:50%;bottom:0;width:3px;background:var(--bg);}
 .it span.x{color:var(--muted);text-decoration:line-through;}
@@ -112,7 +112,7 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
   .topbar h1{font-size:26px;}
   .quick input{font-size:16px;}
   .sec-toggle{padding:8px 10px;font-size:16px;}
-  .icon-btn{width:44px;height:44px;font-size:18px;}
+  .icon-btn{width:36px;height:36px;font-size:15px;}
   .grip{opacity:.5;min-height:44px;width:28px;font-size:16px;}
 }
 </style>
@@ -365,9 +365,9 @@ function mkRow(p){
   if(getNote(p)){
     const noteIcon=h("span",{style:{display:"inline-flex",alignItems:"center",gap:"3px"}});
     const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
-    svg.setAttribute("width","16");svg.setAttribute("height","16");svg.setAttribute("viewBox","0 0 16 16");svg.setAttribute("fill","none");svg.style.color="var(--sec)";
+    svg.setAttribute("width","14");svg.setAttribute("height","14");svg.setAttribute("viewBox","0 0 16 16");svg.setAttribute("fill","none");svg.style.color="var(--muted)";
     const path=document.createElementNS("http://www.w3.org/2000/svg","path");
-    path.setAttribute("d","M2 2h12v8H5l-3 3V2z");path.setAttribute("stroke","currentColor");path.setAttribute("stroke-width","1.8");path.setAttribute("stroke-linejoin","round");
+    path.setAttribute("d","M2 2h12v8H5l-3 3V2z");path.setAttribute("stroke","currentColor");path.setAttribute("stroke-width","1.5");path.setAttribute("stroke-linejoin","round");
     svg.append(path);noteIcon.append(svg);
     meta.append(noteIcon);
   }
@@ -439,7 +439,7 @@ function R(){
   function mkIcon(title,paths,onClick){
     const b=h("button",{className:"icon-btn",title,onClick});
     const sv=document.createElementNS("http://www.w3.org/2000/svg","svg");
-    sv.setAttribute("width","18");sv.setAttribute("height","18");sv.setAttribute("viewBox","0 0 24 24");sv.setAttribute("fill","none");sv.style.color="currentColor";
+    sv.setAttribute("width","15");sv.setAttribute("height","15");sv.setAttribute("viewBox","0 0 24 24");sv.setAttribute("fill","none");sv.style.color="currentColor";
     paths.forEach(d=>{const p=document.createElementNS("http://www.w3.org/2000/svg","path");p.setAttribute("d",d);p.setAttribute("stroke","currentColor");p.setAttribute("stroke-width","1.8");p.setAttribute("fill","none");p.setAttribute("stroke-linecap","round");p.setAttribute("stroke-linejoin","round");sv.append(p);});
     b.append(sv);return b;
   }
@@ -454,7 +454,7 @@ function R(){
   const syncDot=h("div",{style:{display:"flex",alignItems:"center",justifyContent:"center",width:"28px",height:"28px",color:sc.c,cursor:"pointer"}});
   // SVG sync icon
   const ssvg=document.createElementNS("http://www.w3.org/2000/svg","svg");
-  ssvg.setAttribute("width","14");ssvg.setAttribute("height","14");ssvg.setAttribute("viewBox","0 0 16 16");ssvg.setAttribute("fill","none");
+  ssvg.setAttribute("width","13");ssvg.setAttribute("height","13");ssvg.setAttribute("viewBox","0 0 16 16");ssvg.setAttribute("fill","none");
   const sp1=document.createElementNS("http://www.w3.org/2000/svg","path");
   sp1.setAttribute("d","M2.5 8a5.5 5.5 0 0 1 9.3-4");sp1.setAttribute("stroke","currentColor");sp1.setAttribute("stroke-width","1.8");sp1.setAttribute("stroke-linecap","round");
   const sp2=document.createElementNS("http://www.w3.org/2000/svg","path");
