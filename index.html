@@ -256,8 +256,7 @@ function R(){
   const acts=h("div",{style:{display:"flex",gap:"6px"}});
   acts.append(
     h("button",{className:"icon-btn",title:"Raccourcis",onClick:()=>{s.keys=true;R();}},"⌨"),
-    h("button",{className:"icon-btn",title:"Export",onClick:()=>{s.exp=true;R();}},"↗"),
-    h("button",{className:"icon-btn",title:"Reset",onClick:()=>cfm("Réinitialiser ?",()=>{ps(DF);s.ed=null;s.sel.clear();})},"↺")
+    h("button",{className:"icon-btn",title:"Export",onClick:()=>{s.exp=true;R();}},"↗")
   );
   tb.append(acts);w.append(tb);
 
