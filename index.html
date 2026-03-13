@@ -508,12 +508,17 @@ function R(){
   } else {
     tip.append(h("div",{style:{color:"var(--muted)"}},"Aucun log"));
   }
+  tip.append(h("div",{style:{borderTop:"1px solid var(--border)",marginTop:"6px",paddingTop:"5px",fontSize:"9px",color:"var(--muted)"}},"Click: sync · Alt+Click: dashboard"));
   syncWrap.append(syncDot,tip);
   // Hover (desktop)
   syncWrap.addEventListener("mouseenter",()=>{tip.style.opacity="1";tip.style.pointerEvents="auto";});
   syncWrap.addEventListener("mouseleave",()=>{tip.style.opacity="0";tip.style.pointerEvents="none";});
   // Click → open jsonbin dashboard
-  syncDot.addEventListener("click",e=>{e.stopPropagation();window.open("https://jsonbin.io/app/bins","_blank");});
+  syncDot.addEventListener("click",e=>{e.stopPropagation();
+    if(e.altKey||e.ctrlKey||e.metaKey){window.open("https://jsonbin.io/app/bins","_blank");return;}
+    slog("↑","Sync manuel…");s.sy="saving";R();
+    (async()=>{try{await sb(s.p);s.sy="synced";slog("☁","Sync OK");}catch{s.sy="error";slog("✕","Erreur sync");}R();})();
+  });
   acts.append(syncWrap);
   tb.append(acts);w.append(tb);
 
