@@ -381,7 +381,7 @@ function mkRow(p){
   // ═══ EXPANDED STATE ═══
   if(isOpen){
     // Keep same card header but with collapse arrow
-    const c=h("div",{className:"crd",style:{cursor:"default",background:"var(--hover)"}});
+    const c=h("div",{className:"crd",style:{cursor:"default",background:"var(--card)"}});
     c.oncontextmenu=e=>{e.preventDefault();s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);R();};
 
     // Editable name
