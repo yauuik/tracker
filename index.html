@@ -40,9 +40,9 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
 
 .cards{display:flex;flex-direction:column;gap:1px;}
 .row{display:flex;align-items:flex-start;transition:transform .15s,opacity .15s;}
-.row.dragging{background:rgba(97,97,255,.06);border-radius:8px;opacity:1;}
-.row.drag-over-above{border-top:2px solid var(--accent);margin-top:-2px;}
-.row.drag-over-below{border-bottom:2px solid var(--accent);margin-bottom:-2px;}
+.row.dragging{opacity:.3;}
+.row.drag-over-above{border-top:3px solid var(--accent);margin-top:-3px;}
+.row.drag-over-below{border-bottom:3px solid var(--accent);margin-bottom:-3px;}
 .grip{width:24px;padding-top:13px;display:flex;justify-content:center;flex-shrink:0;cursor:grab;color:var(--muted);font-size:14px;opacity:1;transition:opacity .15s;user-select:none;-webkit-user-select:none;letter-spacing:1px;}
 .grip:active{cursor:grabbing;}
 .row:hover .grip{opacity:1;}
