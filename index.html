@@ -488,9 +488,9 @@ function R(){
 function rEdit(){
   const p=s.p.find(x=>x.id===s.ed);if(!p)return;
   const ts=p.tasks||[],dc=ts.filter(t=>tSt(t)==="done").length;
-  const ov=h("div",{className:"ov",onClick:()=>{s.ed=null;R();}});
+  const ov=h("div",{className:"ov",onClick:()=>{if(s.cm)return;s.ed=null;R();}});
   const m=h("div",{className:"mod",onClick:e=>e.stopPropagation()});
-  m.append(h("div",{className:"mod-hdr"},h("h3",{},p.name),h("button",{className:"mod-x",onClick:()=>{s.ed=null;R();}},"✕")));
+  m.append(h("div",{className:"mod-hdr"},h("h3",{},p.name),h("button",{className:"mod-x",onClick:e=>{e.stopPropagation();if(s.cm)return;s.ed=null;R();}},"✕")));
 
   // Status buttons
   const sr=h("div",{style:{display:"flex",gap:"5px",marginBottom:"16px"}});
@@ -587,10 +587,25 @@ function rKeys(){
 }
 
 function rCfm(){
-  const ov=h("div",{className:"ov",style:{zIndex:"2000"},onClick:xcfm});
-  ov.append(h("div",{className:"cfm",onClick:e=>e.stopPropagation()},h("p",{},s.cm),h("div",{style:{display:"flex",gap:"10px",justifyContent:"center"}},
-    h("button",{className:"btn btn-g",style:{padding:"8px 20px"},onClick:xcfm},"Annuler"),
-    h("button",{className:"btn btn-r",style:{padding:"8px 20px"},onClick:()=>{s.cf?.();xcfm();}},"Confirmer"))));
+  const ov=document.createElement("div");
+  ov.className="ov";
+  ov.style.zIndex="2000";
+  ov.style.alignItems="center";
+  ov.style.padding="16px";
+  // Block ALL events from reaching layers below
+  ov.addEventListener("click",e=>{e.stopPropagation();e.preventDefault();xcfm();});
+  ov.addEventListener("touchend",e=>{e.stopPropagation();});
+  const box=h("div",{className:"cfm"});
+  box.addEventListener("click",e=>e.stopPropagation());
+  box.addEventListener("touchend",e=>e.stopPropagation());
+  box.append(
+    h("p",{},s.cm),
+    h("div",{style:{display:"flex",gap:"12px",justifyContent:"center"}},
+      h("button",{className:"btn btn-g",style:{padding:"12px 28px",fontSize:"14px",minHeight:"48px"},onClick:e=>{e.stopPropagation();xcfm();}},"Annuler"),
+      h("button",{className:"btn btn-r",style:{padding:"12px 28px",fontSize:"14px",minHeight:"48px"},onClick:e=>{e.stopPropagation();s.cf?.();xcfm();}},"Confirmer")
+    )
+  );
+  ov.append(box);
   document.getElementById("app").append(ov);
 }
 </script>
