@@ -129,8 +129,15 @@ const DF=[
 ];
 
 // ─── State ───
-let s={p:[],ok:false,sy:"loading",ed:null,exp:false,keys:false,cm:null,cf:null,nk:"",an:"",sel:new Set(),doneOpen:false,sh:false,noteEdit:false};
+let s={p:[],ok:false,sy:"loading",ed:null,exp:false,keys:false,cm:null,cf:null,nk:"",an:"",sel:new Set(),doneOpen:false,sh:false,noteEdit:false,syncLog:false};
 let svT=null;
+const syncLogs=[];
+function slog(type,msg){
+  const now=new Date();
+  const ts=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0")+":"+String(now.getSeconds()).padStart(2,"0");
+  syncLogs.push({ts,type,msg});
+  if(syncLogs.length>30)syncLogs.shift();
+}
 
 // ─── Drag & Drop (To Do only) ───
 let dragId=null;
@@ -180,18 +187,18 @@ function getNote(p){
 // ─── Sync ───
 async function lb(){const r=await fetch(BU+"/latest",{headers:HD});if(!r.ok)throw 0;return(await r.json()).record?.projects||[];}
 async function sb(p){const r=await fetch(BU,{method:"PUT",headers:HD,body:JSON.stringify({projects:p})});if(!r.ok)throw 0;}
-function ps(p){s.p=p;s.sy="saving";R();if(svT)clearTimeout(svT);svT=setTimeout(async()=>{try{await sb(p);s.sy="synced";}catch{s.sy="error";}R();},800);}
+function ps(p){s.p=p;s.sy="saving";slog("↑","Sauvegarde…");R();if(svT)clearTimeout(svT);svT=setTimeout(async()=>{try{await sb(p);s.sy="synced";slog("☁","Sauvegardé ("+p.length+" projets)");}catch{s.sy="error";slog("✕","Erreur sauvegarde");}R();},800);}
 
 // up: update project — skipRender flag to avoid double render
 function up(id,patch,skipRender){
   s.p=s.p.map(p=>p.id===id?{...p,...patch}:p);
   s.sy="saving";
   if(svT)clearTimeout(svT);
-  svT=setTimeout(async()=>{try{await sb(s.p);s.sy="synced";}catch{s.sy="error";}R();},800);
+  svT=setTimeout(async()=>{try{await sb(s.p);s.sy="synced";slog("☁","Synced");}catch{s.sy="error";slog("✕","Erreur sync");}R();},800);
   if(!skipRender) R();
 }
 
-(async()=>{try{const d=await lb();s.p=d.length?d:DF;if(!d.length)await sb(DF);s.sy="synced";}catch{s.p=DF;s.sy="error";}s.ok=true;R();document.addEventListener("keydown",onK);})();
+(async()=>{try{slog("↓","Chargement…");const d=await lb();s.p=d.length?d:DF;if(!d.length)await sb(DF);s.sy="synced";slog("☁","Chargé ("+s.p.length+" projets)");}catch{s.p=DF;s.sy="error";slog("✕","Erreur chargement");}s.ok=true;R();document.addEventListener("keydown",onK);})();
 
 // ─── Cycle: To Do → In Progress → Done → To Do ───
 const NEXT={"To Do":"In Progress","In Progress":"Done","Done":"To Do"};
@@ -411,9 +418,32 @@ function R(){
   acts.append(
     h("button",{className:"icon-btn",title:"Raccourcis",onClick:()=>{s.keys=true;R();}},"⌨"),
     h("button",{className:"icon-btn",title:"Export",onClick:()=>{s.exp=true;R();}},"↗"),
-    h("a",{href:"https://api.jsonbin.io/v3/b/69b32b9ab7ec241ddc634928/latest",target:"_blank",rel:"noopener",style:{display:"flex",alignItems:"center",justifyContent:"center",width:"28px",height:"28px",borderRadius:"50%",background:sc.c==="var(--green)"?"rgba(0,200,117,.12)":sc.c==="var(--amber)"?"rgba(253,171,61,.12)":"rgba(226,68,92,.12)",color:sc.c,fontSize:"13px",fontWeight:"600",marginLeft:"2px",textDecoration:"none",cursor:"pointer"}},sc.c==="var(--green)"?"☁":sc.c==="var(--amber)"?"↑":"!")
+    h("div",{style:{display:"flex",alignItems:"center",justifyContent:"center",width:"28px",height:"28px",borderRadius:"50%",background:sc.c==="var(--green)"?"rgba(0,200,117,.12)":sc.c==="var(--amber)"?"rgba(253,171,61,.12)":"rgba(226,68,92,.12)",color:sc.c,fontSize:"13px",fontWeight:"600",marginLeft:"2px",cursor:"pointer"},onClick:e=>{e.stopPropagation();s.syncLog=!s.syncLog;R();}},sc.c==="var(--green)"?"☁":sc.c==="var(--amber)"?"↑":"!")
   );
   tb.append(acts);w.append(tb);
+
+  // Sync log popup
+  if(s.syncLog){
+    const lp=h("div",{style:{background:"var(--card)",border:"1px solid var(--border)",borderRadius:"10px",padding:"12px 14px",marginBottom:"16px",boxShadow:"0 4px 16px rgba(0,0,0,.06)",maxHeight:"180px",overflowY:"auto"}});
+    const lhdr=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}});
+    lhdr.append(h("span",{style:{fontSize:"11px",fontWeight:"600",color:"var(--sec)",textTransform:"uppercase",letterSpacing:".04em"}},"Sync log"),h("span",{style:{fontSize:"10px",color:"var(--muted)",cursor:"pointer"},onClick:()=>{s.syncLog=false;R();}},"✕"));
+    lp.append(lhdr);
+    if(syncLogs.length){
+      const logList=h("div",{style:{display:"flex",flexDirection:"column",gap:"3px"}});
+      [...syncLogs].reverse().forEach(l=>{
+        const iconCol=l.type==="☁"?"var(--green)":l.type==="↑"||l.type==="↓"?"var(--amber)":"var(--red)";
+        logList.append(h("div",{style:{display:"flex",gap:"8px",alignItems:"center",fontSize:"11px",lineHeight:"1.4"}},
+          h("span",{style:{fontFamily:"monospace",color:"var(--muted)",whiteSpace:"nowrap",fontSize:"10px"}},l.ts),
+          h("span",{style:{color:iconCol}},l.type),
+          h("span",{style:{color:"var(--sec)"}},l.msg)
+        ));
+      });
+      lp.append(logList);
+    } else {
+      lp.append(h("div",{style:{fontSize:"11px",color:"var(--muted)",textAlign:"center"}},"Aucun log"));
+    }
+    w.append(lp);
+  }
 
   // Quick input
   const qi=h("div",{className:"quick"});
