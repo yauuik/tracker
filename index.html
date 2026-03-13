@@ -79,8 +79,6 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
 .mod label{font-size:11px;font-weight:600;color:var(--sec);display:block;margin-bottom:4px;}
 .mod input{width:100%;padding:11px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:16px;font-family:inherit;outline:none;color:var(--text);transition:border-color .15s;}
 .mod input:focus{border-color:var(--accent);}
-.sb{padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:1.5px solid var(--border);background:var(--card);color:var(--sec);transition:all .15s;}
-.sb.on{color:#fff;}
 .tr{display:flex;gap:6px;align-items:center;padding:10px 8px;border-radius:6px;font-size:13px;border-left:3px solid transparent;min-height:44px;}
 .tr:hover{background:var(--hover);}
 .tr.done-bg{background:rgba(0,200,117,.04);border-left-color:var(--green);}
@@ -396,14 +394,6 @@ function mkRow(p){
 
     // ─── Expansion panel ───
     const panel=h("div",{style:{marginTop:"8px",paddingTop:"8px",borderTop:"1px solid var(--border)"}});
-
-    // Status pills (compact)
-    const sr=h("div",{style:{display:"flex",gap:"5px",marginBottom:"10px"}});
-    [["To Do","var(--blue)"],["In Progress","var(--amber)"],["Done","var(--green)"]].forEach(([x,col])=>{
-      const isActive=p.status===x;
-      sr.append(h("button",{className:"sb"+(isActive?" on":""),style:isActive?{borderColor:col,background:col,color:"#fff",fontSize:"11px",padding:"4px 10px"}:{fontSize:"11px",padding:"4px 10px"},onClick:()=>{const patch={status:x};if(x==="Done"){patch.doneAt=td();patch.tasks=(p.tasks||[]).map(t=>({...t,st:"done",doneAt:t.doneAt||td()}));}else patch.doneAt=null;up(p.id,patch);}},x));
-    });
-    panel.append(sr);
 
     // Tasks
     const tir=h("div",{style:{display:"flex",gap:"6px",marginBottom:"4px"}});
