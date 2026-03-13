@@ -619,16 +619,96 @@ function rEdit(){
 }
 
 function rExp(){
-  let md="# Projets\n\n";
-  const g={"In Progress":[],"To Do":[],"Done":[]};s.p.forEach(p=>{if(g[p.status])g[p.status].push(p);});
-  for(const[x,items]of Object.entries(g)){if(!items.length)continue;md+="## "+x+" ("+items.length+")\n\n";items.forEach(p=>{md+="### "+p.name+"\n";if(p.tasks?.length)p.tasks.forEach(t=>{md+="- ["+(tSt(t)==="done"?"x":tSt(t)==="progress"?"/":" ")+"] "+t.text+"\n";});const n=getNote(p);if(n)md+="\n"+n+"\n";md+="\n";});}
+  // Generate markdown from data
+  function toMd(){
+    let md="";
+    const g={"In Progress":[],"To Do":[],"Done":[]};
+    s.p.filter(p=>!p.hidden).forEach(p=>{if(g[p.status])g[p.status].push(p);});
+    for(const[x,items]of Object.entries(g)){
+      if(!items.length)continue;
+      md+="## "+x+"\n\n";
+      items.forEach(p=>{
+        md+="### "+p.name+"\n";
+        if(p.tasks?.length)p.tasks.forEach(t=>{
+          md+="- ["+(tSt(t)==="done"?"x":tSt(t)==="progress"?"/":" ")+"] "+t.text+"\n";
+        });
+        const n=getNote(p);
+        if(n)md+="\n"+n+"\n";
+        md+="\n";
+      });
+    }
+    return md.trim()+"\n";
+  }
+  // Parse markdown back to data
+  function fromMd(md){
+    const lines=md.split("\n");
+    const projects=[];
+    let curStatus=null,curProj=null,noteLines=[];
+    function flushNote(){
+      if(curProj&&noteLines.length){
+        const txt=noteLines.join("\n").trim();
+        if(txt)curProj.note=txt;
+      }
+      noteLines=[];
+    }
+    function flushProj(){
+      flushNote();
+      if(curProj)projects.push(curProj);
+      curProj=null;
+    }
+    for(const line of lines){
+      const statusM=line.match(/^## (In Progress|To Do|Done)/);
+      if(statusM){flushProj();curStatus=statusM[1];continue;}
+      const projM=line.match(/^### (.+)/);
+      if(projM){
+        flushProj();
+        const existing=s.p.find(p=>p.name===projM[1].trim());
+        curProj={id:existing?.id||gid(),name:projM[1].trim(),status:curStatus||"To Do",tasks:[],note:"",doneAt:existing?.doneAt||null,hidden:false};
+        continue;
+      }
+      const taskM=line.match(/^- \[([ x\/])\] (.+)/);
+      if(taskM&&curProj){
+        flushNote();
+        const st=taskM[1]==="x"?"done":taskM[1]==="/"?"progress":"todo";
+        const existingT=(s.p.find(p=>p.name===curProj.name)?.tasks||[]).find(t=>t.text===taskM[2].trim());
+        curProj.tasks.push({text:taskM[2].trim(),st,date:existingT?.date||td(),doneAt:st==="done"?(existingT?.doneAt||td()):undefined});
+        continue;
+      }
+      if(curProj&&line.trim()===""&&!noteLines.length)continue;
+      if(curProj)noteLines.push(line);
+    }
+    flushProj();
+    // Keep hidden projects
+    const hidden=s.p.filter(p=>p.hidden);
+    return [...projects,...hidden];
+  }
+
+  const mdVal=toMd();
   const ov=h("div",{className:"ov",onClick:()=>{s.exp=false;R();}});
-  const m=h("div",{className:"mod",onClick:e=>e.stopPropagation()});
-  m.append(h("div",{className:"mod-hdr"},h("h3",{},"Export Markdown"),h("button",{className:"mod-x",onClick:()=>{s.exp=false;R();}},"✕")));
-  const w=h("div",{style:{position:"relative"}});
-  w.append(h("pre",{style:{background:"var(--bg)",color:"var(--text)",padding:"16px",borderRadius:"10px",border:"1px solid var(--border)",fontSize:"12px",lineHeight:"1.5",maxHeight:"400px",overflowY:"auto",whiteSpace:"pre-wrap",wordBreak:"break-word",fontFamily:"monospace"}},md));
-  w.append(h("button",{className:"btn btn-g",style:{position:"absolute",top:"8px",right:"8px",fontSize:"11px",padding:"4px 10px"},onClick:()=>navigator.clipboard.writeText(md)},"Copier"));
-  m.append(w);ov.append(m);document.getElementById("app").append(ov);
+  const m=h("div",{className:"mod",style:{maxWidth:"560px"},onClick:e=>e.stopPropagation()});
+  m.append(h("div",{className:"mod-hdr"},h("h3",{},"Markdown"),h("button",{className:"mod-x",onClick:()=>{s.exp=false;R();}},"✕")));
+
+  const info=h("div",{style:{fontSize:"11px",color:"var(--muted)",marginBottom:"10px",lineHeight:"1.4"}});
+  info.textContent="Édite directement. Format : ## Statut / ### Projet / - [x] tâche done / - [/] en cours / - [ ] à faire";
+  m.append(info);
+
+  const ta=h("textarea",{id:"md-edit",style:{width:"100%",padding:"14px",borderRadius:"10px",border:"1.5px solid var(--border)",fontSize:"13px",fontFamily:"monospace",lineHeight:"1.6",color:"var(--text)",background:"var(--bg)",outline:"none",resize:"vertical",minHeight:"300px",maxHeight:"60vh",transition:"border-color .15s"}});
+  ta.value=mdVal;
+  ta.addEventListener("focus",()=>{ta.style.borderColor="var(--accent)";});
+  ta.addEventListener("blur",()=>{ta.style.borderColor="var(--border)";});
+  m.append(ta);
+
+  const btns=h("div",{style:{display:"flex",gap:"8px",justifyContent:"flex-end",marginTop:"12px"}});
+  btns.append(
+    h("button",{className:"btn btn-g",style:{fontSize:"12px"},onClick:()=>navigator.clipboard.writeText(ta.value)},"Copier"),
+    h("button",{className:"btn btn-a",style:{fontSize:"12px"},onClick:()=>{
+      const parsed=fromMd(ta.value);
+      ps(parsed);
+      s.exp=false;
+    }},"Appliquer")
+  );
+  m.append(btns);
+  ov.append(m);document.getElementById("app").append(ov);
 }
 
 function rKeys(){
