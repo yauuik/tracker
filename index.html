@@ -652,6 +652,15 @@ function R(){
   w.append(vf);
 
   a.append(w);
+
+  // Click outside expanded card → close
+  if(s.ed){
+    w.addEventListener("click",e=>{
+      const openRow=w.querySelector('.row[data-id="'+s.ed+'"]');
+      if(openRow&&!openRow.contains(e.target)){s.ed=null;s.noteEdit=false;R();}
+    });
+  }
+
   if(s.exp)rExp();
   if(s.keys)rKeys();
   if(s.cm)rCfm();
