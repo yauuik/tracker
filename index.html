@@ -41,7 +41,8 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
 .cards{display:flex;flex-direction:column;gap:1px;}
 .row{display:flex;align-items:flex-start;transition:transform .15s,opacity .15s;}
 .row.dragging{opacity:.3;transform:scale(.98);}
-.row.drag-over{border-top:2px solid var(--accent);margin-top:-2px;}
+.row.drag-over-above{border-top:2px solid var(--accent);margin-top:-2px;}
+.row.drag-over-below{border-bottom:2px solid var(--accent);margin-bottom:-2px;}
 .grip{width:20px;padding-top:13px;display:flex;justify-content:center;flex-shrink:0;cursor:grab;color:var(--muted);font-size:10px;opacity:.3;transition:opacity .15s;user-select:none;-webkit-user-select:none;}
 .grip:active{cursor:grabbing;}
 .row:hover .grip{opacity:.7;}
@@ -139,6 +140,7 @@ function reorder(fromId,toId){
   const fi=arr.findIndex(p=>p.id===fromId);
   const ti=arr.findIndex(p=>p.id===toId);
   if(fi<0||ti<0)return;
+  // Swap: remove from old position, insert at target position
   const [item]=arr.splice(fi,1);
   arr.splice(ti,0,item);
   ps(arr);
@@ -248,16 +250,20 @@ function mkRow(p){
   row.setAttribute("data-id",p.id);
 
   // Drag & Drop — To Do only
+  const clearDO=()=>document.querySelectorAll(".row.drag-over-above,.row.drag-over-below").forEach(r=>{r.classList.remove("drag-over-above","drag-over-below");});
   if(isTodo){
-    row.addEventListener("dragover",e=>{e.preventDefault();document.querySelectorAll(".row.drag-over").forEach(r=>r.classList.remove("drag-over"));row.classList.add("drag-over");});
-    row.addEventListener("dragleave",()=>row.classList.remove("drag-over"));
-    row.addEventListener("drop",e=>{e.preventDefault();document.querySelectorAll(".row.drag-over").forEach(r=>r.classList.remove("drag-over"));reorder(dragId,p.id);dragId=null;});
+    row.addEventListener("dragover",e=>{e.preventDefault();clearDO();
+      const fi=s.p.findIndex(x=>x.id===dragId),ti=s.p.findIndex(x=>x.id===p.id);
+      row.classList.add(fi<ti?"drag-over-below":"drag-over-above");
+    });
+    row.addEventListener("dragleave",()=>{row.classList.remove("drag-over-above","drag-over-below");});
+    row.addEventListener("drop",e=>{e.preventDefault();clearDO();reorder(dragId,p.id);dragId=null;});
 
     const grip=h("div",{className:"grip"});
     grip.textContent="⠿";
     grip.draggable=true;
     grip.addEventListener("dragstart",e=>{dragId=p.id;e.dataTransfer.effectAllowed="move";e.dataTransfer.setDragImage(row,0,0);row.classList.add("dragging");});
-    grip.addEventListener("dragend",()=>{dragId=null;row.classList.remove("dragging");document.querySelectorAll(".row.drag-over").forEach(r=>r.classList.remove("drag-over"));});
+    grip.addEventListener("dragend",()=>{dragId=null;row.classList.remove("dragging");clearDO();});
     // Touch
     grip.addEventListener("touchstart",e=>{
       touchCurId=p.id;
@@ -270,17 +276,21 @@ function mkRow(p){
       if(!touchClone)return;e.preventDefault();
       const y=e.touches[0].clientY;
       touchClone.style.top=(y-20)+"px";
-      document.querySelectorAll(".row.drag-over").forEach(r=>r.classList.remove("drag-over"));
+      clearDO();
       const el=document.elementFromPoint(window.innerWidth/2,y);
       const target=el?.closest?.(".row");
-      if(target&&target.getAttribute("data-id")!==touchCurId)target.classList.add("drag-over");
+      const tid=target?.getAttribute("data-id");
+      if(target&&tid!==touchCurId){
+        const fi=s.p.findIndex(x=>x.id===touchCurId),ti=s.p.findIndex(x=>x.id===tid);
+        target.classList.add(fi<ti?"drag-over-below":"drag-over-above");
+      }
     });
     grip.addEventListener("touchend",()=>{
       if(touchClone){touchClone.remove();touchClone=null;}
       if(touchDragEl){touchDragEl.style.opacity="";touchDragEl=null;}
-      const overEl=document.querySelector(".row.drag-over");
+      const overEl=document.querySelector(".row.drag-over-above,.row.drag-over-below");
       const toId=overEl?.getAttribute("data-id");
-      document.querySelectorAll(".row.drag-over").forEach(r=>r.classList.remove("drag-over"));
+      clearDO();
       if(touchCurId&&toId)reorder(touchCurId,toId);
       touchCurId=null;
     });
