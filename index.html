@@ -129,7 +129,7 @@ const DF=[
 ];
 
 // ─── State ───
-let s={p:[],ok:false,sy:"loading",ed:null,exp:false,keys:false,cm:null,cf:null,nk:"",an:"",sel:new Set(),doneOpen:false,sh:false};
+let s={p:[],ok:false,sy:"loading",ed:null,exp:false,keys:false,cm:null,cf:null,nk:"",an:"",sel:new Set(),doneOpen:false,sh:false,noteEdit:false};
 let svT=null;
 
 // ─── Drag & Drop (To Do only) ───
@@ -324,7 +324,7 @@ function mkRow(p){
   row.append(h("div",{className:"chk",onClick:e=>{e.stopPropagation();togP(p.id);}},
     h("div",{className:bxCls(pSt)},bxTxt(pSt))));
 
-  const c=h("div",{className:"crd",onClick:()=>{s.ed=p.id;s.nk="";R();}});
+  const c=h("div",{className:"crd",onClick:()=>{s.ed=p.id;s.nk="";s.noteEdit=false;R();}});
   c.oncontextmenu=e=>{e.preventDefault();s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);R();};
 
   const top=h("div",{className:"crd-top"});
@@ -534,16 +534,30 @@ function rEdit(){
   if(!ts.length)tl.append(h("div",{style:{padding:"10px",color:"var(--muted)",fontSize:"13px",textAlign:"center"}},"Aucune tâche"));
   m.append(h("div",{style:{marginBottom:"14px"}},th2,tir,tl));
 
-  // Notes — single text field
+  // Notes — preview with clickable links, click to edit
   const noteVal=getNote(p);
   const nd=h("div",{style:{marginBottom:"14px"}});
   nd.append(h("label",{},"Notes"));
-  const ta=h("textarea",{id:"ni",placeholder:"Notes, liens, idées…",style:{width:"100%",padding:"11px 12px",borderRadius:"8px",border:"1.5px solid var(--border)",fontSize:"14px",fontFamily:"inherit",outline:"none",color:"var(--text)",resize:"vertical",minHeight:"80px",maxHeight:"200px",lineHeight:"1.5",transition:"border-color .15s"}});
-  ta.value=noteVal;
-  ta.addEventListener("input",e=>{up(p.id,{note:e.target.value});});
-  ta.addEventListener("focus",()=>{ta.style.borderColor="var(--accent)";});
-  ta.addEventListener("blur",()=>{ta.style.borderColor="var(--border)";});
-  nd.append(ta);
+
+  // Preview (richText with links)
+  if(noteVal&&!s.noteEdit){
+    const preview=h("div",{style:{padding:"11px 12px",borderRadius:"8px",border:"1.5px solid var(--border)",fontSize:"14px",lineHeight:"1.5",minHeight:"44px",cursor:"text",background:"var(--card)",wordBreak:"break-word"}});
+    preview.append(richText(noteVal,{}));
+    preview.addEventListener("click",e=>{if(e.target.tagName==="A")return;s.noteEdit=true;R();});
+    nd.append(preview);
+  } else if(!noteVal&&!s.noteEdit){
+    const ph=h("div",{style:{padding:"11px 12px",borderRadius:"8px",border:"1.5px dashed var(--border)",fontSize:"13px",color:"var(--muted)",cursor:"text",minHeight:"44px"}});
+    ph.textContent="Cliquer pour ajouter des notes…";
+    ph.addEventListener("click",()=>{s.noteEdit=true;R();});
+    nd.append(ph);
+  } else {
+    // Textarea edit mode
+    const ta=h("textarea",{id:"ni",placeholder:"Notes, liens, idées…",style:{width:"100%",padding:"11px 12px",borderRadius:"8px",border:"1.5px solid var(--accent)",fontSize:"14px",fontFamily:"inherit",outline:"none",color:"var(--text)",resize:"vertical",minHeight:"80px",maxHeight:"200px",lineHeight:"1.5"}});
+    ta.value=noteVal;
+    ta.addEventListener("input",e=>{up(p.id,{note:e.target.value},true);});
+    ta.addEventListener("blur",()=>{s.noteEdit=false;R();});
+    nd.append(ta);
+  }
   m.append(nd);
 
   const ft=h("div",{style:{display:"flex",justifyContent:"space-between",paddingTop:"12px",borderTop:"1px solid var(--border)"}});
