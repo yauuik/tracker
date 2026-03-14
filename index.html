@@ -39,14 +39,15 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
 .sec-line{flex:1;height:1px;background:var(--border);}
 
 .cards{display:flex;flex-direction:column;gap:1px;}
-.row{display:flex;align-items:flex-start;transition:transform .15s,opacity .15s;min-width:0;overflow:visible;}
-.row.dragging{opacity:.3;}
-.row.drag-over-above{position:relative;transform:translateY(8px);transition:transform .15s;}
-.row.drag-over-above::before{content:"";position:absolute;top:-6px;left:0;right:0;height:3px;background:var(--accent);border-radius:2px;z-index:10;}
-.row.drag-over-above::after{content:"";position:absolute;top:-8px;left:-2px;width:8px;height:8px;border-radius:50%;background:var(--accent);z-index:10;}
-.row.drag-over-below{position:relative;transform:translateY(-8px);transition:transform .15s;}
-.row.drag-over-below::before{content:"";position:absolute;bottom:-6px;left:0;right:0;height:3px;background:var(--accent);border-radius:2px;z-index:10;}
-.row.drag-over-below::after{content:"";position:absolute;bottom:-8px;left:-2px;width:8px;height:8px;border-radius:50%;background:var(--accent);z-index:10;}
+.row{display:flex;align-items:flex-start;transition:opacity .15s;min-width:0;overflow:visible;}
+.row.dragging{opacity:.15;pointer-events:none;}
+.row.drag-clone{position:fixed;left:0;right:0;z-index:9999;opacity:.9;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.15);background:var(--card);border-radius:8px;border:1.5px solid rgba(97,97,255,.25);}
+.drop-line{height:0;transition:height .15s ease;position:relative;overflow:visible;}
+.drop-line.active{height:10px;}
+.drop-line::before{content:"";position:absolute;top:50%;left:0;right:0;height:3px;margin-top:-1.5px;background:var(--accent);border-radius:2px;opacity:0;transition:opacity .1s;}
+.drop-line.active::before{opacity:1;}
+.drop-line::after{content:"";position:absolute;top:50%;left:-2px;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--accent);opacity:0;transition:opacity .1s;}
+.drop-line.active::after{opacity:1;}
 .grip{width:24px;padding-top:13px;display:flex;justify-content:center;flex-shrink:0;cursor:grab;color:var(--muted);font-size:14px;opacity:1;transition:opacity .15s;user-select:none;-webkit-user-select:none;letter-spacing:1px;}
 .grip:active{cursor:grabbing;}
 .row:hover .grip{opacity:1;}
@@ -145,21 +146,81 @@ function slog(type,msg){
   if(syncLogs.length>30)syncLogs.shift();
 }
 
-// ─── Drag & Drop (To Do only) ───
-let dragId=null,lastDragOver=null;
-function reorder(fromId,toId){
+// ─── Drag & Drop (To Do only) — custom mouse-based ───
+let dragId=null,lastDragOver=null,dragClone=null,dragStartY=0,dragRowH=0;
+function reorder(fromId,toId,above){
   if(!fromId||!toId||fromId===toId)return;
   const arr=[...s.p];
   const fi=arr.findIndex(p=>p.id===fromId);
-  const ti=arr.findIndex(p=>p.id===toId);
+  let ti=arr.findIndex(p=>p.id===toId);
   if(fi<0||ti<0)return;
-  // Swap: remove from old position, insert at target position
   const [item]=arr.splice(fi,1);
+  // After removal, adjust target index
+  if(fi<ti)ti--;
+  if(!above)ti++;
   arr.splice(ti,0,item);
   ps(arr);
 }
 
 let touchDragEl=null,touchClone=null,touchCurId=null;
+
+function clearDropLines(){document.querySelectorAll(".drop-line.active").forEach(d=>d.classList.remove("active"));}
+function findDropTarget(y){
+  const rows=document.querySelectorAll('.row[data-id]');
+  let best=null,bestDist=Infinity;
+  rows.forEach(r=>{
+    if(r.getAttribute("data-id")===dragId)return;
+    const rc=r.getBoundingClientRect();
+    const mid=rc.top+rc.height/2;
+    const dist=Math.abs(y-mid);
+    if(dist<bestDist){bestDist=dist;best={el:r,id:r.getAttribute("data-id"),above:y<mid};}
+  });
+  return best;
+}
+function onDragMove(e){
+  if(!dragClone)return;
+  e.preventDefault();
+  const y=(e.clientY||e.touches?.[0]?.clientY||0);
+  dragClone.style.top=(y-dragRowH/2)+"px";
+  const t=findDropTarget(y);
+  if(!t)return;
+  const key=t.id+(t.above?"a":"b");
+  if(lastDragOver===key)return;
+  lastDragOver=key;
+  clearDropLines();
+  // Find or create drop-line before/after target
+  const lineId="dl-"+t.id+(t.above?"-a":"-b");
+  let line=document.getElementById(lineId);
+  if(!line){
+    line=document.createElement("div");
+    line.className="drop-line";line.id=lineId;
+    if(t.above)t.el.parentElement.insertBefore(line,t.el);
+    else t.el.parentElement.insertBefore(line,t.el.nextSibling);
+  }
+  requestAnimationFrame(()=>line.classList.add("active"));
+}
+function onDragEnd(){
+  if(!dragClone)return;
+  document.removeEventListener("mousemove",onDragMove);
+  document.removeEventListener("mouseup",onDragEnd);
+  document.removeEventListener("touchmove",onDragMove);
+  document.removeEventListener("touchend",onDragEnd);
+  dragClone.remove();dragClone=null;
+  // Find active drop line to determine target
+  const active=document.querySelector(".drop-line.active");
+  if(active){
+    const lineId=active.id;// dl-{id}-a or dl-{id}-b
+    const suffix=lineId.slice(-1);// 'a' or 'b'
+    const targetId=lineId.slice(3,-2);// remove 'dl-' and '-a'/'-b'
+    if(targetId&&targetId!==dragId)reorder(dragId,targetId,suffix==="a");
+  }
+  dragId=null;lastDragOver=null;
+  document.querySelectorAll(".drop-line").forEach(d=>d.remove());
+  document.querySelectorAll(".row.dragging").forEach(r=>r.classList.remove("dragging"));
+  document.body.style.userSelect="";
+  R();
+}
+
 const gid=()=>"p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const td=()=>new Date().toISOString().slice(0,10);
 function shortDt(d){if(!d)return"";const dt=new Date(d);const m=["jan","fév","mar","avr","mai","jun","jul","aoû","sep","oct","nov","déc"];return dt.getDate()+" "+m[dt.getMonth()];}
@@ -332,52 +393,32 @@ function mkRow(p){
   const row=h("div",{className:"row"});
   row.setAttribute("data-id",p.id);
 
-  // Drag & Drop — To Do only, collapsed only
-  const clearDO=()=>document.querySelectorAll(".row.drag-over-above,.row.drag-over-below").forEach(r=>{r.classList.remove("drag-over-above","drag-over-below");});
+  // Drag & Drop — To Do only, collapsed only — custom mouse/touch
   if(isTodo&&!isOpen){
-    row.draggable=true;
     row.style.cursor="grab";
-    row.addEventListener("dragstart",e=>{dragId=p.id;lastDragOver=null;e.dataTransfer.effectAllowed="move";e.dataTransfer.setDragImage(row,0,0);row.classList.add("dragging");});
-    row.addEventListener("dragend",()=>{dragId=null;lastDragOver=null;row.classList.remove("dragging");clearDO();});
-    row.addEventListener("dragover",e=>{e.preventDefault();
-      if(lastDragOver===p.id)return;
-      lastDragOver=p.id;clearDO();
-      const fi=s.p.findIndex(x=>x.id===dragId),ti=s.p.findIndex(x=>x.id===p.id);
-      row.classList.add(fi<ti?"drag-over-below":"drag-over-above");
+    const startDrag=(startY)=>{
+      dragId=p.id;lastDragOver=null;
+      dragRowH=row.offsetHeight;
+      dragClone=row.cloneNode(true);
+      dragClone.className="row drag-clone";
+      dragClone.style.top=(row.getBoundingClientRect().top)+"px";
+      dragClone.style.width=row.offsetWidth+"px";
+      document.body.append(dragClone);
+      row.classList.add("dragging");
+      document.body.style.userSelect="none";
+      document.addEventListener("mousemove",onDragMove);
+      document.addEventListener("mouseup",onDragEnd);
+      document.addEventListener("touchmove",onDragMove,{passive:false});
+      document.addEventListener("touchend",onDragEnd);
+    };
+    row.addEventListener("mousedown",e=>{
+      if(e.target.closest(".chk,.bx,.bx-s,.crd,.rm,.btn-t"))return;
+      e.preventDefault();startDrag(e.clientY);
     });
-    row.addEventListener("dragleave",()=>{if(lastDragOver===p.id)lastDragOver=null;row.classList.remove("drag-over-above","drag-over-below");});
-    row.addEventListener("drop",e=>{e.preventDefault();clearDO();lastDragOver=null;reorder(dragId,p.id);dragId=null;});
     const grip=h("div",{className:"grip"});
     grip.textContent="⠿";
-    grip.addEventListener("touchstart",e=>{
-      touchCurId=p.id;
-      touchClone=row.cloneNode(true);touchClone.style.cssText="position:fixed;left:0;right:0;z-index:9999;opacity:.85;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.12);background:rgba(97,97,255,.06);border-radius:8px;border:1.5px solid rgba(97,97,255,.2);";
-      touchClone.style.top=row.getBoundingClientRect().top+"px";
-      document.body.append(touchClone);
-      row.style.opacity=".3";touchDragEl=row;
-    },{passive:true});
-    grip.addEventListener("touchmove",e=>{
-      if(!touchClone)return;e.preventDefault();
-      const y=e.touches[0].clientY;
-      touchClone.style.top=(y-20)+"px";
-      clearDO();
-      const el=document.elementFromPoint(window.innerWidth/2,y);
-      const target=el?.closest?.(".row");
-      const tid=target?.getAttribute("data-id");
-      if(target&&tid!==touchCurId){
-        const fi=s.p.findIndex(x=>x.id===touchCurId),ti=s.p.findIndex(x=>x.id===tid);
-        target.classList.add(fi<ti?"drag-over-below":"drag-over-above");
-      }
-    });
-    grip.addEventListener("touchend",()=>{
-      if(touchClone){touchClone.remove();touchClone=null;}
-      if(touchDragEl){touchDragEl.style.opacity="";touchDragEl=null;}
-      const overEl=document.querySelector(".row.drag-over-above,.row.drag-over-below");
-      const toId=overEl?.getAttribute("data-id");
-      clearDO();
-      if(touchCurId&&toId)reorder(touchCurId,toId);
-      touchCurId=null;
-    });
+    grip.addEventListener("mousedown",e=>{e.preventDefault();e.stopPropagation();startDrag(e.clientY);});
+    grip.addEventListener("touchstart",e=>{startDrag(e.touches[0].clientY);},{passive:true});
     row.append(grip);
   }
 
