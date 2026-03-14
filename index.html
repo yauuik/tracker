@@ -396,13 +396,16 @@ function mkRow(p){
   // Drag & Drop — To Do only, collapsed only — custom mouse/touch
   if(isTodo&&!isOpen){
     row.style.cursor="grab";
+    let pendingDrag=null;
     const startDrag=(startY)=>{
       dragId=p.id;lastDragOver=null;
-      dragRowH=row.offsetHeight;
+      const rect=row.getBoundingClientRect();
+      dragRowH=rect.height;
       dragClone=row.cloneNode(true);
       dragClone.className="row drag-clone";
-      dragClone.style.top=(row.getBoundingClientRect().top)+"px";
-      dragClone.style.width=row.offsetWidth+"px";
+      dragClone.style.top=rect.top+"px";
+      dragClone.style.left=rect.left+"px";
+      dragClone.style.width=rect.width+"px";
       document.body.append(dragClone);
       row.classList.add("dragging");
       document.body.style.userSelect="none";
@@ -411,13 +414,34 @@ function mkRow(p){
       document.addEventListener("touchmove",onDragMove,{passive:false});
       document.addEventListener("touchend",onDragEnd);
     };
+    // Drag from anywhere on the row — distinguish click vs drag with 5px threshold
     row.addEventListener("mousedown",e=>{
-      if(e.target.closest(".chk,.bx,.bx-s,.crd,.rm,.btn-t"))return;
-      e.preventDefault();startDrag(e.clientY);
+      if(e.button!==0)return;
+      if(e.target.closest(".chk,.bx,.bx-s,.rm,.btn-t"))return;
+      const startY=e.clientY;const startX=e.clientX;
+      pendingDrag={startY,startX,started:false};
+      const onMove2=ev=>{
+        if(!pendingDrag)return;
+        const dx=ev.clientX-startX,dy=ev.clientY-startY;
+        if(Math.abs(dx)+Math.abs(dy)>5&&!pendingDrag.started){
+          pendingDrag.started=true;
+          startDrag(startY);
+        }
+      };
+      const onUp2=()=>{
+        document.removeEventListener("mousemove",onMove2);
+        document.removeEventListener("mouseup",onUp2);
+        if(pendingDrag&&!pendingDrag.started){
+          // Was a click, not a drag — open edit
+          s.ed=p.id;s.nk="";s.noteEdit=false;R();
+        }
+        pendingDrag=null;
+      };
+      document.addEventListener("mousemove",onMove2);
+      document.addEventListener("mouseup",onUp2);
     });
     const grip=h("div",{className:"grip"});
     grip.textContent="⠿";
-    grip.addEventListener("mousedown",e=>{e.preventDefault();e.stopPropagation();startDrag(e.clientY);});
     grip.addEventListener("touchstart",e=>{startDrag(e.touches[0].clientY);},{passive:true});
     row.append(grip);
   }
@@ -509,7 +533,8 @@ function mkRow(p){
   }
 
   // ═══ COLLAPSED STATE ═══
-  const c=h("div",{className:"crd",onClick:()=>{s.ed=p.id;s.nk="";s.noteEdit=false;R();}});
+  const c=h("div",{className:"crd"});
+  if(!isTodo)c.addEventListener("click",()=>{s.ed=p.id;s.nk="";s.noteEdit=false;R();});
   c.oncontextmenu=e=>{e.preventDefault();s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);R();};
 
   const top=h("div",{className:"crd-top"});
