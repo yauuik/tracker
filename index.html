@@ -110,7 +110,7 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
 .row-urgent .crd-name{color:var(--red) !important;font-weight:700;}
 .row-urgent .mention{color:var(--red) !important;background:rgba(226,68,92,.1) !important;}
 .ac-wrap{position:relative;}
-.ac-list{position:absolute;left:0;right:0;top:100%;margin-top:2px;background:var(--card);border:1.5px solid var(--border);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.08);z-index:200;max-height:160px;overflow-y:auto;display:none;}
+.ac-list{background:var(--card);border:1.5px solid var(--border);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.08);z-index:9999;max-height:160px;overflow-y:auto;display:none;}
 .ac-list.open{display:block;}
 .ac-item{padding:5px 10px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;}
 .ac-item:hover,.ac-item.sel{background:var(--hover);}
@@ -318,13 +318,23 @@ function richText(txt,style){
   return sp;
 }
 
-// Mention autocomplete wrapper — wraps an input in a container with dropdown
+// Mention autocomplete — dropdown portaled to body (no clipping)
 function mkMentionInput(inputEl,onEnter){
   const wrap=h("div",{className:"ac-wrap",style:{flex:"1"}});
-  const list=h("div",{className:"ac-list"});
+  const list=document.createElement("div");
+  list.className="ac-list";
+  list.style.position="fixed";
+  document.body.append(list);
   let acOpen=false,acIdx=0,acQuery="",acFiltered=[];
 
   function closeAc(){acOpen=false;list.classList.remove("open");list.innerHTML="";}
+  function positionList(){
+    const r=inputEl.getBoundingClientRect();
+    list.style.left=r.left+"px";
+    list.style.width=r.width+"px";
+    if(window.innerHeight-r.bottom>170){list.style.top=(r.bottom+2)+"px";list.style.bottom="auto";}
+    else{list.style.bottom=(window.innerHeight-r.top+2)+"px";list.style.top="auto";}
+  }
   function openAc(q){
     acQuery=q.toLowerCase();
     acFiltered=TEAM.filter(t=>t.toLowerCase().startsWith(acQuery));
@@ -333,16 +343,16 @@ function mkMentionInput(inputEl,onEnter){
     list.innerHTML="";
     acFiltered.forEach((name,i)=>{
       const it=h("div",{className:"ac-item"+(i===0?" sel":"")});
-      const av=h("div",{className:"ac-av"},name[0].toUpperCase());
-      it.append(av,h("span",{},name));
+      it.append(h("div",{className:"ac-av"},name[0].toUpperCase()),h("span",{},name));
       it.addEventListener("mousedown",e=>{e.preventDefault();pickMention(name);});
       list.append(it);
     });
+    positionList();
     list.classList.add("open");
   }
   function pickMention(name){
     const v=inputEl.value;
-    const cur=inputEl.selectionStart||v.length;
+    const cur=inputEl.selectionStart!=null?inputEl.selectionStart:v.length;
     const before=v.slice(0,cur);
     const atIdx=before.lastIndexOf("@");
     if(atIdx<0){closeAc();return;}
@@ -353,7 +363,6 @@ function mkMentionInput(inputEl,onEnter){
     const newPos=atIdx+name.length+2;
     inputEl.setSelectionRange(newPos,newPos);
   }
-
   function checkMention(){
     const v=inputEl.value;
     const cur=inputEl.selectionStart!=null?inputEl.selectionStart:v.length;
@@ -378,7 +387,7 @@ function mkMentionInput(inputEl,onEnter){
   });
   inputEl.addEventListener("blur",()=>setTimeout(closeAc,150));
 
-  wrap.append(inputEl,list);
+  wrap.append(inputEl);
   return wrap;
 }
 function tSt(t){return t.st||(t.done?"done":"todo");}
