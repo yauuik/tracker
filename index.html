@@ -322,27 +322,24 @@ const acEl=document.createElement("div");
 acEl.className="ac-list";
 acEl.style.position="fixed";
 document.body.append(acEl);
-let acTarget=null,acOpen=false,acIdx=0,acFiltered=[];
+let acTarget=null,acOpen2=false,acIdx2=0,acFiltered2=[];
 
-function acClose(){acOpen=false;acEl.classList.remove("open");acEl.innerHTML="";acTarget=null;}
-function acPosition(el){
-  const r=el.getBoundingClientRect();
-  acEl.style.left=r.left+"px";acEl.style.width=r.width+"px";
-  if(window.innerHeight-r.bottom>170){acEl.style.top=(r.bottom+2)+"px";acEl.style.bottom="auto";}
-  else{acEl.style.bottom=(window.innerHeight-r.top+2)+"px";acEl.style.top="auto";}
-}
+function acClose(){acOpen2=false;acEl.classList.remove("open");acEl.innerHTML="";acTarget=null;}
 function acShow(q,el){
-  acFiltered=TEAM.filter(t=>t.toLowerCase().startsWith(q.toLowerCase()));
-  if(!acFiltered.length){acClose();return;}
-  acTarget=el;acOpen=true;acIdx=0;
+  acFiltered2=TEAM.filter(t=>t.toLowerCase().startsWith(q.toLowerCase()));
+  if(!acFiltered2.length){acClose();return;}
+  acTarget=el;acOpen2=true;acIdx2=0;
   acEl.innerHTML="";
-  acFiltered.forEach((name,i)=>{
+  acFiltered2.forEach((name,i)=>{
     const it=h("div",{className:"ac-item"+(i===0?" sel":"")});
     it.append(h("div",{className:"ac-av"},name[0].toUpperCase()),h("span",{},name));
     it.addEventListener("mousedown",e=>{e.preventDefault();acPick(name);});
     acEl.append(it);
   });
-  acPosition(el);
+  const r=el.getBoundingClientRect();
+  acEl.style.left=r.left+"px";acEl.style.width=r.width+"px";
+  if(window.innerHeight-r.bottom>170){acEl.style.top=(r.bottom+2)+"px";acEl.style.bottom="auto";}
+  else{acEl.style.bottom=(window.innerHeight-r.top+2)+"px";acEl.style.top="auto";}
   acEl.classList.add("open");
 }
 function acPick(name){
@@ -372,24 +369,20 @@ function acCheck(el){
   acClose();
 }
 
-// Global listeners — works on ANY input with class "ac-in"
-document.addEventListener("input",e=>{if(e.target.classList.contains("ac-in"))acCheck(e.target);});
-document.addEventListener("keyup",e=>{if(e.target.classList.contains("ac-in"))acCheck(e.target);});
-document.addEventListener("keydown",e=>{
-  if(!e.target.classList.contains("ac-in"))return;
-  if(acOpen){
-    if(e.key==="ArrowDown"){e.preventDefault();acIdx=Math.min(acIdx+1,acFiltered.length-1);acEl.querySelectorAll(".ac-item").forEach((it,i)=>it.classList.toggle("sel",i===acIdx));}
-    else if(e.key==="ArrowUp"){e.preventDefault();acIdx=Math.max(acIdx-1,0);acEl.querySelectorAll(".ac-item").forEach((it,i)=>it.classList.toggle("sel",i===acIdx));}
-    else if(e.key==="Enter"&&acFiltered[acIdx]){e.preventDefault();acPick(acFiltered[acIdx]);return;}
-    else if(e.key==="Escape"){e.preventDefault();acClose();return;}
-  }
-});
-document.addEventListener("blur",e=>{if(e.target.classList.contains("ac-in"))setTimeout(acClose,150);},true);
-
-// Helper: just add "ac-in" class + onEnter to any input
+// Bind mention autocomplete directly on an input + optional Enter handler
 function mentionInput(inputEl,onEnter){
-  inputEl.classList.add("ac-in");
-  if(onEnter)inputEl.addEventListener("keydown",e=>{if(e.key==="Enter"&&!acOpen){e.preventDefault();onEnter();}});
+  inputEl.addEventListener("input",()=>acCheck(inputEl));
+  inputEl.addEventListener("keyup",()=>acCheck(inputEl));
+  inputEl.addEventListener("keydown",e=>{
+    if(acOpen2){
+      if(e.key==="ArrowDown"){e.preventDefault();acIdx2=Math.min(acIdx2+1,acFiltered2.length-1);acEl.querySelectorAll(".ac-item").forEach((it,i)=>it.classList.toggle("sel",i===acIdx2));}
+      else if(e.key==="ArrowUp"){e.preventDefault();acIdx2=Math.max(acIdx2-1,0);acEl.querySelectorAll(".ac-item").forEach((it,i)=>it.classList.toggle("sel",i===acIdx2));}
+      else if(e.key==="Enter"&&acFiltered2[acIdx2]){e.preventDefault();e.stopImmediatePropagation();acPick(acFiltered2[acIdx2]);return;}
+      else if(e.key==="Escape"){e.preventDefault();acClose();return;}
+    }
+    if(!acOpen2&&e.key==="Enter"&&onEnter){e.preventDefault();onEnter();}
+  });
+  inputEl.addEventListener("blur",()=>setTimeout(acClose,150));
   return inputEl;
 }
 function tSt(t){return t.st||(t.done?"done":"todo");}
