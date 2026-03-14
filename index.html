@@ -146,7 +146,7 @@ function slog(type,msg){
 }
 
 // ─── Drag & Drop (To Do only) ───
-let dragId=null;
+let dragId=null,lastDragOver=null;
 function reorder(fromId,toId){
   if(!fromId||!toId||fromId===toId)return;
   const arr=[...s.p];
@@ -337,14 +337,16 @@ function mkRow(p){
   if(isTodo&&!isOpen){
     row.draggable=true;
     row.style.cursor="grab";
-    row.addEventListener("dragstart",e=>{dragId=p.id;e.dataTransfer.effectAllowed="move";e.dataTransfer.setDragImage(row,0,0);row.classList.add("dragging");});
-    row.addEventListener("dragend",()=>{dragId=null;row.classList.remove("dragging");clearDO();});
-    row.addEventListener("dragover",e=>{e.preventDefault();clearDO();
+    row.addEventListener("dragstart",e=>{dragId=p.id;lastDragOver=null;e.dataTransfer.effectAllowed="move";e.dataTransfer.setDragImage(row,0,0);row.classList.add("dragging");});
+    row.addEventListener("dragend",()=>{dragId=null;lastDragOver=null;row.classList.remove("dragging");clearDO();});
+    row.addEventListener("dragover",e=>{e.preventDefault();
+      if(lastDragOver===p.id)return;
+      lastDragOver=p.id;clearDO();
       const fi=s.p.findIndex(x=>x.id===dragId),ti=s.p.findIndex(x=>x.id===p.id);
       row.classList.add(fi<ti?"drag-over-below":"drag-over-above");
     });
-    row.addEventListener("dragleave",()=>{row.classList.remove("drag-over-above","drag-over-below");});
-    row.addEventListener("drop",e=>{e.preventDefault();clearDO();reorder(dragId,p.id);dragId=null;});
+    row.addEventListener("dragleave",()=>{if(lastDragOver===p.id)lastDragOver=null;row.classList.remove("drag-over-above","drag-over-below");});
+    row.addEventListener("drop",e=>{e.preventDefault();clearDO();lastDragOver=null;reorder(dragId,p.id);dragId=null;});
     const grip=h("div",{className:"grip"});
     grip.textContent="⠿";
     grip.addEventListener("touchstart",e=>{
