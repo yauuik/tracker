@@ -323,6 +323,7 @@ function acClose(){
   acOpen2=false;
   if(acList){acList.remove();acList=null;}
   acTarget=null;
+  if(s._pendingR){s._pendingR=false;R();}
 }
 function acShow(q,el,wrap){
   acFiltered2=TEAM.filter(t=>t.toLowerCase().startsWith(q.toLowerCase()));
@@ -789,6 +790,10 @@ function mkSec(label,color,count,toggle,isOpen,onToggle){
 
 // ─── Main render ───
 function R(){
+  // Defer re-render while mention dropdown is open
+  if(acOpen2){s._pendingR=true;return;}
+  s._pendingR=false;
+
   // Skip re-render of modal if editing name (preserve focus)
   const activeEl=document.activeElement;
   const activeId=activeEl?.id;
