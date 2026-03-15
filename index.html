@@ -87,7 +87,7 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
 .crd-top{display:flex;align-items:flex-start;gap:10px;}
 .crd-name{font-size:15px;font-weight:500;line-height:1.35;flex:1;min-width:0;word-break:break-word;}
 .crd-name.x{text-decoration:line-through;color:var(--muted);}
-.meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);flex-shrink:0;}
+.meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text);flex-shrink:0;}
 .prog{width:36px;height:3px;border-radius:2px;background:var(--border);overflow:hidden;}
 .prog-f{height:100%;border-radius:2px;transition:width .3s;}
 
@@ -957,7 +957,7 @@ function mkRow(p){
   if(getNote(p)){
     const noteIcon=h("span",{style:{display:"inline-flex",alignItems:"center",gap:"3px"}});
     const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
-    svg.setAttribute("width","14");svg.setAttribute("height","14");svg.setAttribute("viewBox","0 0 16 16");svg.setAttribute("fill","none");svg.style.color="var(--muted)";
+    svg.setAttribute("width","14");svg.setAttribute("height","14");svg.setAttribute("viewBox","0 0 16 16");svg.setAttribute("fill","none");svg.style.color="var(--sec)";
     const path=document.createElementNS("http://www.w3.org/2000/svg","path");
     path.setAttribute("d","M2 2h12v8H5l-3 3V2z");path.setAttribute("stroke","currentColor");path.setAttribute("stroke-width","1.5");path.setAttribute("stroke-linejoin","round");
     svg.append(path);noteIcon.append(svg);
