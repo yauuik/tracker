@@ -415,9 +415,7 @@ function acShowCE(q,el,wrap){
 // Pick using saved text (no selection needed — works on mobile)
 function acPickText(el,name,wrap){
   if(acSavedAtIdx<0){acClose();return;}
-  // Find the @query in saved text and replace with @Name
   const before=acSavedText.slice(0,acSavedAtIdx);
-  // Find end of @query (next space or end)
   const afterAt=acSavedText.slice(acSavedAtIdx);
   const spaceIdx=afterAt.indexOf(" ");
   const after=spaceIdx>=0?acSavedText.slice(acSavedAtIdx+spaceIdx):"";
@@ -425,7 +423,16 @@ function acPickText(el,name,wrap){
   ceSet(el,newText);
   if(wrap._onInput)wrap._onInput(ceVal(el));
   acClose();
-  ceEnd(el);
+  // Place cursor right after the chip (find it by data-mention)
+  const chip=el.querySelector('[data-mention="'+name+'"]');
+  if(chip){
+    const space=chip.nextSibling;
+    const sel=window.getSelection();
+    const range=document.createRange();
+    if(space&&space.nodeType===3){range.setStart(space,1);range.setEnd(space,1);}
+    else{range.setStartAfter(chip);range.setEndAfter(chip);}
+    sel.removeAllRanges();sel.addRange(range);
+  } else ceEnd(el);
 }
 
 // Check for @query before cursor
@@ -463,6 +470,30 @@ function mentionField(opts){
       else if(e.key==="Escape"){e.preventDefault();acClose();return;}
     }
     if(e.key==="Enter"&&!acOpen2){e.preventDefault();if(opts.onEnter)opts.onEnter();}
+    // Backspace: delete chip as a block
+    if(e.key==="Backspace"){
+      const sel=window.getSelection();
+      if(!sel.rangeCount)return;
+      const range=sel.getRangeAt(0);
+      if(!range.collapsed)return;// let default handle selection delete
+      const node=range.startContainer;
+      const offset=range.startOffset;
+      // Case 1: cursor in text node at position 0, previous sibling is a chip
+      if(node.nodeType===3&&offset===0){
+        const prev=node.previousSibling;
+        if(prev&&prev.dataset?.mention){e.preventDefault();prev.remove();if(opts.onInput)opts.onInput(ceVal(ed));return;}
+      }
+      // Case 2: cursor in text node at position 1 and it's a nbsp after chip
+      if(node.nodeType===3&&offset<=1&&node.textContent.charCodeAt(0)===160){
+        const prev=node.previousSibling;
+        if(prev&&prev.dataset?.mention){e.preventDefault();node.remove();prev.remove();if(opts.onInput)opts.onInput(ceVal(ed));return;}
+      }
+      // Case 3: cursor in the CE div itself, previous child is a chip
+      if(node===ed&&offset>0){
+        const prev=ed.childNodes[offset-1];
+        if(prev&&prev.dataset?.mention){e.preventDefault();prev.remove();if(opts.onInput)opts.onInput(ceVal(ed));return;}
+      }
+    }
   });
   ed.addEventListener("blur",()=>setTimeout(acClose,250));
   ed.addEventListener("paste",e=>{e.preventDefault();document.execCommand("insertText",false,(e.clipboardData||window.clipboardData).getData("text/plain"));});
