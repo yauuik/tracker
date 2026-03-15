@@ -412,6 +412,35 @@ function acShowCE(q,el,wrap){
   wrap.append(acList);
 }
 
+// Place cursor at a specific text offset in CE
+function ceCursorAt(el,offset){
+  el.focus();
+  let pos=0;
+  for(const node of el.childNodes){
+    let len=0;
+    if(node.nodeType===3)len=node.textContent.length;
+    else if(node.dataset?.mention)len=node.dataset.mention.length+1;// @+name
+    else len=node.textContent.length;
+    if(pos+len>=offset){
+      const sel=window.getSelection();
+      const range=document.createRange();
+      if(node.nodeType===3){
+        const idx=Math.min(offset-pos,node.textContent.length);
+        range.setStart(node,idx);range.setEnd(node,idx);
+      } else {
+        // After this node
+        const next=node.nextSibling;
+        if(next&&next.nodeType===3){range.setStart(next,0);range.setEnd(next,0);}
+        else{range.setStartAfter(node);range.setEndAfter(node);}
+      }
+      sel.removeAllRanges();sel.addRange(range);
+      return;
+    }
+    pos+=len;
+  }
+  ceEnd(el);
+}
+
 // Pick using saved text (no selection needed — works on mobile)
 function acPickText(el,name,wrap){
   if(acSavedAtIdx<0){acClose();return;}
@@ -423,16 +452,9 @@ function acPickText(el,name,wrap){
   ceSet(el,newText);
   if(wrap._onInput)wrap._onInput(ceVal(el));
   acClose();
-  // Place cursor right after the chip (find it by data-mention)
-  const chip=el.querySelector('[data-mention="'+name+'"]');
-  if(chip){
-    const space=chip.nextSibling;
-    const sel=window.getSelection();
-    const range=document.createRange();
-    if(space&&space.nodeType===3){range.setStart(space,1);range.setEnd(space,1);}
-    else{range.setStartAfter(chip);range.setEndAfter(chip);}
-    sel.removeAllRanges();sel.addRange(range);
-  } else ceEnd(el);
+  // Cursor right after @Name + space
+  const targetOffset=acSavedAtIdx+name.length+2;
+  requestAnimationFrame(()=>ceCursorAt(el,targetOffset));
 }
 
 // Check for @query before cursor
