@@ -239,7 +239,20 @@ function onDragEnd(){
 const gid=()=>"p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const td=()=>new Date().toISOString().slice(0,10);
 function shortDt(d){if(!d)return"";const dt=new Date(d);const m=["jan","fév","mar","avr","mai","jun","jul","aoû","sep","oct","nov","déc"];return dt.getDate()+" "+m[dt.getMonth()];}
-// Render text with clickable links and line breaks
+// Date badge with smart coloring
+function dateBadge(dateStr){
+  if(!dateStr)return null;
+  const dt=new Date(dateStr+"T00:00:00");
+  const now=new Date();now.setHours(0,0,0,0);
+  const diff=Math.floor((dt-now)/(1000*60*60*24));
+  let color="var(--sec)",bg="var(--hover)";
+  if(diff<0){color="var(--red)";bg="rgba(226,68,92,.08)";} // overdue
+  else if(diff===0){color="var(--red)";bg="rgba(226,68,92,.08)";} // today
+  else if(diff<=2){color="#e67e22";bg="rgba(230,126,34,.08)";} // 1-2 days
+  else if(diff<=7){color="var(--amber)";bg="rgba(253,171,61,.1)";} // this week
+  const label=diff===0?"Aujourd'hui":diff===-1?"Hier":diff===1?"Demain":shortDt(dateStr);
+  return h("span",{style:{fontSize:"10px",fontWeight:"600",color,background:bg,padding:"2px 7px",borderRadius:"8px",whiteSpace:"nowrap",lineHeight:"1.4",display:"inline-flex",alignItems:"center",gap:"3px"}},"📅 "+label);
+}
 // Parse task text: extract @mentions (to front) and !! (urgent flag)
 const NAME_RE=/@([\w\u00C0-\u024F]+)/g;
 function parseTask(txt){
@@ -736,6 +749,8 @@ function mkRow(p){
       meta.append(pg,h("span",{},dc+"/"+ts.length));
     }
     if(isDone&&p.doneAt)meta.append(h("span",{style:{color:"var(--green)",fontSize:"10px",fontFamily:"monospace"}},"✓ "+shortDt(p.doneAt)));
+    const db3=dateBadge(p.due);
+    if(db3&&!isDone)meta.append(db3);
     top.append(meta);
     c.append(top);
 
@@ -762,6 +777,19 @@ function mkRow(p){
 
     // ─── Edit panel below ───
     const panel=h("div",{style:{marginTop:"8px",paddingTop:"8px",borderTop:"1px solid var(--border)",position:"relative",zIndex:"50",overflow:"visible"}});
+
+    // Date picker
+    const dateRow=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}});
+    dateRow.append(h("span",{style:{fontSize:"11px",color:"var(--sec)",fontWeight:"600"}},"Échéance"));
+    const dateIn=h("input",{type:"date",value:p.due||"",style:{fontSize:"12px",padding:"4px 8px",border:"1.5px solid var(--border)",borderRadius:"6px",fontFamily:"inherit",color:"var(--text)",background:"var(--card)",outline:"none",cursor:"pointer"}});
+    dateIn.addEventListener("change",e=>up(p.id,{due:e.target.value||null}));
+    dateRow.append(dateIn);
+    if(p.due){
+      dateRow.append(h("button",{className:"btn-t",style:{fontSize:"10px",padding:"2px 6px",minHeight:"auto",color:"var(--muted)"},onClick:()=>{up(p.id,{due:null});}},"✕"));
+      const db2=dateBadge(p.due);
+      if(db2)dateRow.append(db2);
+    }
+    panel.append(dateRow);
 
     // Add task input
     const tir=h("div",{style:{display:"flex",gap:"6px",marginBottom:"4px",position:"relative",zIndex:"60",overflow:"visible"}});
@@ -832,6 +860,8 @@ function mkRow(p){
     meta.append(noteIcon);
   }
   if(isDone&&p.doneAt)meta.append(h("span",{style:{color:"var(--green)",fontSize:"10px",fontFamily:"monospace"}},"✓ "+shortDt(p.doneAt)));
+  const db=dateBadge(p.due);
+  if(db&&!isDone)meta.append(db);
   top.append(meta);c.append(top);
 
   if(ts.length){
