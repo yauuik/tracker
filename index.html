@@ -1145,6 +1145,8 @@ function R(){
   if(s.ed&&!s.cm){
     s._outsideH=e=>{
       if(!s.ed||s.cm)return;
+      // Ignore clicks on flatpickr calendar
+      if(e.target.closest&&e.target.closest(".flatpickr-calendar"))return;
       // Check if click is inside the expanded row
       let el=e.target;
       while(el){
