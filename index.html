@@ -441,29 +441,78 @@ function ceCursorAt(el,offset){
   ceEnd(el);
 }
 
-// Pick using saved text (no selection needed — works on mobile)
+// Pick using saved text — surgical DOM replacement, no full rebuild
 let _blockR=false;
 function acPickText(el,name,wrap){
   if(acSavedAtIdx<0){acClose();return;}
-  const before=acSavedText.slice(0,acSavedAtIdx);
-  const afterAt=acSavedText.slice(acSavedAtIdx);
-  const spaceIdx=afterAt.indexOf(" ");
-  const after=spaceIdx>=0?acSavedText.slice(acSavedAtIdx+spaceIdx):"";
-  const newText=before+"@"+name+" "+after;
-  if(wrap._onInput)wrap._onInput(newText.replace(/\u00A0/g," ").trim());
-  s._pendingR=false;
+  // Close dropdown first
   acOpen2=false;
   if(acList){acList.remove();acList=null;}
-  acTarget=null;acSavedAtIdx=-1;
-  ceSet(el,newText);
-  const targetOffset=before.length+name.length+2;// before + @Name + space
+  acTarget=null;
+  s._pendingR=false;
   _blockR=true;
-  el.focus();
-  setTimeout(()=>{setTimeout(()=>{
-    ceCursorAt(el,targetOffset);
-    _blockR=false;
-    if(s._pendingR){s._pendingR=false;}
-  },50);},0);
+
+  // Find and replace @query in DOM without rebuilding
+  const fullText=acSavedText;
+  const before=fullText.slice(0,acSavedAtIdx);
+  const afterAt=fullText.slice(acSavedAtIdx);
+  const spaceIdx=afterAt.indexOf(" ");
+  const queryEnd=spaceIdx>=0?acSavedAtIdx+spaceIdx:fullText.length;
+
+  // Walk childNodes to find the text node(s) containing the @query
+  let charPos=0,found=false;
+  for(let i=0;i<el.childNodes.length;i++){
+    const node=el.childNodes[i];
+    let nodeLen=0;
+    if(node.nodeType===3)nodeLen=node.textContent.length;
+    else if(node.dataset?.mention)nodeLen=node.dataset.mention.length+1;
+    else nodeLen=node.textContent.length;
+
+    if(!found&&node.nodeType===3&&charPos<=acSavedAtIdx&&charPos+nodeLen>acSavedAtIdx){
+      // This text node contains the @
+      const localAt=acSavedAtIdx-charPos;
+      const localEnd=Math.min(queryEnd-charPos,node.textContent.length);
+      const beforeText=node.textContent.slice(0,localAt);
+      const afterText=node.textContent.slice(localEnd);
+
+      // Build replacement nodes
+      const chip=h("span",{className:"mention ce-chip",contentEditable:"false"});
+      chip.dataset.mention=name;chip.textContent=name;
+      const space=document.createTextNode("\u00A0");
+
+      // Replace
+      const parent=node.parentNode;
+      if(afterText)parent.insertBefore(document.createTextNode(afterText),node.nextSibling);
+      parent.insertBefore(space,node.nextSibling);
+      parent.insertBefore(chip,node.nextSibling);
+      node.textContent=beforeText;
+      if(!beforeText)parent.removeChild(node);
+
+      // Cursor after space
+      el.focus();
+      const sel=window.getSelection();
+      const range=document.createRange();
+      range.setStartAfter(space);
+      range.setEndAfter(space);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      found=true;
+      break;
+    }
+    charPos+=nodeLen;
+  }
+
+  if(!found){
+    // Fallback: full rebuild
+    const newText=before+"@"+name+" "+fullText.slice(queryEnd);
+    ceSet(el,newText);
+    ceEnd(el);
+  }
+
+  if(wrap._onInput)wrap._onInput(ceVal(el));
+  acSavedAtIdx=-1;
+  _blockR=false;
+  if(s._pendingR)s._pendingR=false;
 }
 
 // Check for @query before cursor
