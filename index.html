@@ -649,7 +649,7 @@ function mkRow(p){
     // Same top row as collapsed — name is editable input with @mention
     const top=h("div",{className:"crd-top"});
     const nameIn=h("input",{id:"ed-name",value:p.name,style:{fontSize:"15px",fontWeight:"500",lineHeight:"1.35",width:"100%",minWidth:"0",border:"none",outline:"none",background:"transparent",fontFamily:"inherit",color:isDone?"var(--muted)":"var(--text)",padding:"0",margin:"0"},onInput:e=>up(p.id,{name:e.target.value},true)});
-    const nameWrap=mentionInput(nameIn);
+    const nameWrap=mentionInput(nameIn,()=>{s.ed=null;s.noteEdit=false;R();});
     requestAnimationFrame(()=>{nameIn.focus();nameIn.selectionStart=nameIn.selectionEnd=nameIn.value.length;});
     top.append(nameWrap);
     const meta=h("div",{className:"meta"});
