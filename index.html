@@ -262,7 +262,11 @@ function onDragEnd(){
 
 const gid=()=>"p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const td=()=>new Date().toISOString().slice(0,10);
-function capFirst(s){if(!s)return s;return s.charAt(0).toUpperCase()+s.slice(1);}
+function capFirst(s){
+  if(!s)return s;
+  // Skip leading @mentions to capitalize the first real word
+  return s.replace(/^((?:@[\w\u00C0-\u024F]+\s*)*)(\w)/,(all,tags,letter)=>tags+letter.toUpperCase());
+}
 function shortDt(d){if(!d)return"";const dt=new Date(d);const m=["jan","fév","mar","avr","mai","jun","jul","aoû","sep","oct","nov","déc"];return dt.getDate()+" "+m[dt.getMonth()];}
 // Date badge with smart coloring
 function dateBadge(dateStr){
@@ -422,9 +426,10 @@ function extractTags(txt){
 
 // Rebuild full value from tags + text
 function buildVal(tags,text){
+  const capText=text?text.charAt(0).toUpperCase()+text.slice(1):text;
   let v=tags.map(t=>"@"+t).join(" ");
-  if(v&&text)v+=" ";
-  return v+text;
+  if(v&&capText)v+=" ";
+  return v+capText;
 }
 
 function acShow(q,wrap){
