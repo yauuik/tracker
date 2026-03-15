@@ -25,6 +25,7 @@ span.flatpickr-weekday{color:var(--sec) !important;font-weight:600 !important;fo
 .flatpickr-day.today.selected{color:#fff !important;}
 .flatpickr-day.flatpickr-disabled,.flatpickr-day.prevMonthDay,.flatpickr-day.nextMonthDay{color:var(--muted) !important;}
 .numInputWrapper span{display:none !important;}
+[contenteditable]:empty::before{content:attr(data-ph);color:var(--muted);pointer-events:none;}
 </style>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -910,24 +911,46 @@ function mkRow(p){
     panel.append(tir);
 
     // Notes
-    const noteVal=getNote(p);
-    if(noteVal&&!s.noteEdit){
-      const preview=h("div",{style:{padding:"6px 8px",borderRadius:"6px",border:"1px dashed var(--border)",fontSize:"12px",lineHeight:"1.5",cursor:"text",color:"var(--sec)",wordBreak:"break-word",marginTop:"6px"}});
-      preview.append(richText(noteVal,{}));
-      preview.addEventListener("click",e=>{if(e.target.tagName==="A")return;s.noteEdit=true;R();});
-      panel.append(preview);
-    } else if(!noteVal&&!s.noteEdit){
-      const ph=h("div",{style:{padding:"6px 8px",borderRadius:"6px",border:"1px dashed var(--border)",fontSize:"11px",color:"var(--muted)",cursor:"text",marginTop:"6px"}});
-      ph.textContent="+ Note…";
-      ph.addEventListener("click",()=>{s.noteEdit=true;R();});
-      panel.append(ph);
-    } else {
-      const ta=h("textarea",{id:"ni",placeholder:"Notes, liens, idées…",style:{width:"100%",padding:"6px 8px",borderRadius:"6px",border:"1.5px solid var(--accent)",fontSize:"12px",fontFamily:"inherit",outline:"none",color:"var(--text)",resize:"vertical",minHeight:"50px",maxHeight:"140px",lineHeight:"1.5",marginTop:"6px"}});
-      ta.value=noteVal;
-      ta.addEventListener("input",e=>{up(p.id,{note:e.target.value},true);});
-      ta.addEventListener("blur",()=>{setTimeout(()=>{if(s.ed===p.id)s.noteEdit=false;R();},200);});
-      panel.append(ta);
+    // Notes — always editable when project is open, with mini toolbar
+    const noteWrap=h("div",{style:{marginTop:"8px",borderRadius:"8px",border:"1.5px solid var(--border)",overflow:"hidden",background:"var(--card)"}});
+    // Toolbar
+    const tb=h("div",{style:{display:"flex",gap:"2px",padding:"4px 6px",borderBottom:"1px solid var(--border)",background:"var(--hover)"}});
+    function tbBtn(label,cmd,val){
+      const b=h("button",{style:{background:"none",border:"none",cursor:"pointer",padding:"3px 6px",borderRadius:"4px",fontSize:"12px",fontWeight:"600",color:"var(--sec)",fontFamily:"inherit",lineHeight:"1"}});
+      b.textContent=label;
+      b.addEventListener("mousedown",e=>{e.preventDefault();});
+      b.addEventListener("click",e=>{
+        e.preventDefault();e.stopPropagation();
+        const ne=noteWrap.querySelector("[contenteditable]");
+        if(ne){ne.focus();document.execCommand(cmd,false,val||null);}
+      });
+      return b;
     }
+    tb.append(tbBtn("B","bold"),tbBtn("I","italic"),tbBtn("—","insertHorizontalRule"),tbBtn("• Liste","insertUnorderedList"),tbBtn("1. Liste","insertOrderedList"));
+    noteWrap.append(tb);
+    // Editable area
+    const noteDiv=h("div",{contentEditable:"true",style:{padding:"8px 10px",fontSize:"13px",fontFamily:"inherit",lineHeight:"1.6",color:"var(--text)",outline:"none",minHeight:"60px",maxHeight:"200px",overflowY:"auto",wordBreak:"break-word"}});
+    // Convert stored plain text to HTML (preserve line breaks)
+    const noteVal=getNote(p);
+    if(noteVal){
+      // If it looks like HTML already, use it; otherwise convert newlines
+      if(noteVal.includes("<")&&noteVal.includes(">"))noteDiv.innerHTML=noteVal;
+      else noteDiv.innerHTML=noteVal.replace(/\n/g,"<br>");
+    }
+    noteDiv.dataset.ph="Notes, liens, idées…";
+    noteDiv.addEventListener("input",()=>{up(p.id,{note:noteDiv.innerHTML},true);});
+    noteDiv.addEventListener("paste",e=>{
+      // Allow rich paste from clipboard
+      const html=(e.clipboardData||window.clipboardData).getData("text/html");
+      if(!html){
+        e.preventDefault();
+        document.execCommand("insertText",false,(e.clipboardData||window.clipboardData).getData("text/plain"));
+      }
+    });
+    noteDiv.addEventListener("mousedown",e=>e.stopPropagation());
+    noteDiv.addEventListener("click",e=>e.stopPropagation());
+    noteWrap.append(noteDiv);
+    panel.append(noteWrap);
 
     // Footer
     const ft=h("div",{style:{display:"flex",justifyContent:"flex-end",gap:"8px",paddingTop:"6px",marginTop:"6px"}});
