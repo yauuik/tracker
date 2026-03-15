@@ -639,9 +639,14 @@ function mkRow(p){
   // Drag & Drop — To Do only, collapsed only — custom mouse/touch
   if(isTodo&&!isOpen){
     row.style.cursor="grab";
+    row.style.userSelect="none";
+    row.style.webkitUserSelect="none";
+    row.style.webkitTouchCallout="none";
+    row.style.touchAction="manipulation";
     let pendingDrag=null;
     const startDrag=(startY)=>{
       dragId=p.id;lastDragOver=null;
+      window.getSelection()?.removeAllRanges();
       const rect=row.getBoundingClientRect();
       dragRowH=rect.height;
       dragClone=row.cloneNode(true);
@@ -696,6 +701,7 @@ function mkRow(p){
     // Touch drag from entire row (with threshold to distinguish tap vs drag)
     row.addEventListener("touchstart",e=>{
       if(e.target.closest(".chk,.bx,.bx-s,.rm,.btn-t"))return;
+      window.getSelection()?.removeAllRanges();
       const t=e.touches[0];
       const startY=t.clientY,startX=t.clientX;
       let started=false;
