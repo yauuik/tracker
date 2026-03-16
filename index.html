@@ -120,7 +120,7 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
 .row:hover{background:var(--hover);border-radius:8px;}
 .row-urgent:hover{background:rgba(226,68,92,.08) !important;}
 .done-anim .crd-name{text-decoration:line-through;color:var(--muted) !important;transition:color .3s,text-decoration .3s;}
-.done-anim{opacity:.4;transition:opacity .6s ease .2s;}
+.done-anim{opacity:.4;transition:opacity .8s ease .3s;}
 .crd-top{display:flex;align-items:flex-start;gap:10px;}
 .crd-name{font-size:15px;font-weight:500;line-height:1.35;flex:1;min-width:0;word-break:break-word;}
 .crd-name.x{text-decoration:line-through;color:var(--muted);}
@@ -715,7 +715,7 @@ function togP(id){
       // Animate checkbox to done state
       const bx=row.querySelector(".bx");
       if(bx){bx.classList.remove("ip");bx.classList.add("dn");bx.textContent="✓";}
-      setTimeout(()=>qR(),800);
+      setTimeout(()=>qR(),1500);
     }
     else qR();
   } else up(id,patch);
@@ -764,7 +764,7 @@ function togT(pid,i){
     setTimeout(()=>{
       if(allDone)up(pid,{status:"Done",doneAt:td()});
       else R();
-    },800);
+    },1500);
   } else {
     if(allDone)up(pid,{status:"Done",doneAt:td()});
     else R();
