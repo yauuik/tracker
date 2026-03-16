@@ -1165,7 +1165,7 @@ function mkRow(p){
   c.oncontextmenu=e=>{e.preventDefault();s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);R();};
 
   const {urgent:projUrgent}=parseTask(p.name);
-  if(projUrgent||isUrgent(p))row.classList.add("row-urgent");
+  if(!isDone&&(projUrgent||isUrgent(p)))row.classList.add("row-urgent");
   const top=h("div",{className:"crd-top"});
   const nameEl=richTask(p.name,{});
   nameEl.className="crd-name"+(isDone?" x":"");
