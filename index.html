@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Task.r</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='10' width='80' height='80' rx='16' fill='none' stroke='%23FDAB3D' stroke-width='10'/><line x1='32' y1='50' x2='68' y2='50' stroke='%23FDAB3D' stroke-width='8' stroke-linecap='round'/></svg>">
-<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
@@ -35,6 +35,20 @@ span.flatpickr-weekday{color:var(--sec) !important;font-weight:600 !important;fo
   --text:#323338;--sec:#676879;--muted:#C3C6D4;
   --border:#E6E9EF;--hover:#F5F6F8;
 }
+:root.theme-ims{
+  --bg:#000000;--card:#0a0a0a;--dark:#00ffcc;
+  --accent:#00e0ff;--green:#00ff00;--amber:#ffff00;--red:#ff4444;--blue:#00e0ff;
+  --text:#00ffcc;--sec:#33ccaa;--muted:#337766;
+  --border:#1a4a3a;--hover:#0d1f1a;
+}
+.theme-ims body,.theme-ims{font-family:'IBM Plex Mono','Courier New',monospace !important;}
+.theme-ims .topbar h1{letter-spacing:.05em;text-transform:uppercase;}
+.theme-ims .mention{background:rgba(0,224,255,.12) !important;color:var(--accent) !important;}
+.theme-ims .bx,.theme-ims .bx-s{border-color:var(--sec);border-radius:0 !important;}
+.theme-ims .crd{border-radius:0 !important;}
+.theme-ims .row:hover{border-radius:0 !important;}
+.theme-ims .mod{border-radius:4px 4px 0 0 !important;}
+.theme-ims ::selection{background:#00e0ff;color:#000;}
 body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom,0);-webkit-tap-highlight-color:transparent;}
 ::selection{background:var(--accent);color:#fff;}
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:var(--muted);border-radius:2px;}
@@ -1259,6 +1273,9 @@ function R(){
   const allIds=new Set(s.p.map(p=>p.id));
   s.sel.forEach(id=>{if(!allIds.has(id))s.sel.delete(id);});
 
+  // Apply theme
+  document.documentElement.classList.toggle("theme-ims",!!settings.themeIms);
+
   const lwMap={narrow:"520px",normal:"680px",wide:"900px"};
   const w=h("div",{className:"wrap"});
   w.style.maxWidth=lwMap[settings.layoutWidth||"normal"];
@@ -1594,6 +1611,7 @@ function rSett(){
 
   m.append(toggleRow("Flatpickr","Calendrier stylisé au lieu du natif","flatpickr",false,"beta"));
   m.append(toggleRow("Icône mention","Petit icône personne dans les tags","mentionIcon",true));
+  m.append(toggleRow("Thème IMS","Terminal IBM 3270 — nostalgie mainframe","themeIms",false,"fun"));
 
   // Layout width selector
   const lwRow=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderBottom:"1px solid var(--border)"}});
