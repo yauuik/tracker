@@ -710,7 +710,13 @@ function togP(id){
   if(next==="Done"){
     up(id,patch,true);// save but don't render yet
     const row=document.querySelector('[data-id="'+id+'"]');
-    if(row){row.classList.add("done-anim");setTimeout(()=>qR(),800);}
+    if(row){
+      row.classList.add("done-anim");
+      // Animate checkbox to done state
+      const bx=row.querySelector(".bx");
+      if(bx){bx.classList.remove("ip");bx.classList.add("dn");bx.textContent="✓";}
+      setTimeout(()=>qR(),800);
+    }
     else qR();
   } else up(id,patch);
 }
@@ -748,6 +754,9 @@ function togT(pid,i){
     // Animate subtask strikethrough then render
     const rows=document.querySelectorAll('[data-id="'+pid+'"] .it');
     if(rows[i]){
+      // Animate checkbox
+      const bx=rows[i].querySelector(".bx-s");
+      if(bx){bx.classList.remove("ip");bx.classList.add("dn");bx.textContent="✓";}
       const sp=rows[i].querySelector("span");
       if(sp){sp.style.textDecoration="line-through";sp.style.color="var(--muted)";sp.style.transition="color .3s";}
       rows[i].style.opacity=".4";rows[i].style.transition="opacity .5s ease .2s";
