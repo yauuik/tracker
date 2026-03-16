@@ -945,6 +945,20 @@ function mkRow(p){
       return b;
     }
     tb.append(tbBtn("B","bold"),tbBtn("I","italic"),tbBtn("—","insertHorizontalRule"),tbBtn("• Liste","insertUnorderedList"),tbBtn("1. Liste","insertOrderedList"));
+    // Link button
+    const linkBtn=h("button",{style:{background:"none",border:"none",cursor:"pointer",padding:"3px 6px",borderRadius:"4px",fontSize:"12px",fontWeight:"600",color:"var(--sec)",fontFamily:"inherit",lineHeight:"1"}});
+    linkBtn.textContent="🔗";
+    linkBtn.addEventListener("mousedown",e=>e.preventDefault());
+    linkBtn.addEventListener("click",e=>{
+      e.preventDefault();e.stopPropagation();
+      const ne=noteWrap.querySelector("[contenteditable]");
+      if(!ne)return;
+      const sel=window.getSelection();
+      const txt=sel.toString().trim();
+      const url=txt.startsWith("http")?txt:prompt("URL :");
+      if(url){ne.focus();document.execCommand("createLink",false,url);}
+    });
+    tb.append(linkBtn);
     // Expand button
     const expBtn=h("button",{style:{background:"none",border:"none",cursor:"pointer",padding:"3px 6px",borderRadius:"4px",fontSize:"12px",color:"var(--sec)",fontFamily:"inherit",lineHeight:"1",marginLeft:"auto"}});
     expBtn.textContent="⛶";
@@ -1010,9 +1024,40 @@ function mkRow(p){
       // If it looks like HTML already, use it; otherwise convert newlines
       if(noteVal.includes("<")&&noteVal.includes(">"))noteDiv.innerHTML=noteVal;
       else noteDiv.innerHTML=noteVal.replace(/\n/g,"<br>");
+      requestAnimationFrame(()=>linkifyNote(noteDiv));
     }
     noteDiv.dataset.ph="Notes, liens, idées…";
+    // Auto-linkify plain URLs in text nodes
+    function linkifyNote(el){
+      const urlRe=/(https?:\/\/[^\s<]+)/g;
+      const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);
+      const nodes=[];
+      while(walker.nextNode())nodes.push(walker.currentNode);
+      nodes.forEach(node=>{
+        if(node.parentElement.tagName==="A")return;
+        const txt=node.textContent;
+        if(!urlRe.test(txt))return;
+        urlRe.lastIndex=0;
+        const frag=document.createDocumentFragment();
+        let last=0;
+        for(const m of txt.matchAll(urlRe)){
+          if(m.index>last)frag.append(document.createTextNode(txt.slice(last,m.index)));
+          const a=document.createElement("a");
+          a.href=m[0];a.textContent=m[0];a.target="_blank";a.rel="noopener";
+          a.style.color="var(--accent)";a.style.textDecoration="underline";
+          frag.append(a);
+          last=m.index+m[0].length;
+        }
+        if(last<txt.length)frag.append(document.createTextNode(txt.slice(last)));
+        node.parentNode.replaceChild(frag,node);
+      });
+    }
     noteDiv.addEventListener("input",()=>{up(p.id,{note:noteDiv.innerHTML},true);});
+    noteDiv.addEventListener("blur",()=>{linkifyNote(noteDiv);up(p.id,{note:noteDiv.innerHTML},true);});
+    // Make existing links clickable (open in new tab)
+    noteDiv.addEventListener("click",e=>{
+      if(e.target.tagName==="A"){e.preventDefault();e.stopPropagation();window.open(e.target.href,"_blank");}
+    });
     noteDiv.addEventListener("paste",e=>{
       const html=(e.clipboardData||window.clipboardData).getData("text/html");
       if(html){
