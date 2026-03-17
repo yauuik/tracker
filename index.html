@@ -825,7 +825,7 @@ function qadd(){
   ps([n,...s.p]);
   s.an="";s.nk="";
 }
-function atk(){if(!s.nk.trim()||!s.ed)return;const p=s.p.find(x=>x.id===s.ed);up(s.ed,{tasks:[...(p.tasks||[]),{text:capFirst(s.nk.trim()),st:"todo",date:td()}]});s.nk="";}
+function atk(){if(!s.nk.trim()||!s.ed)return;const p=s.p.find(x=>x.id===s.ed);up(s.ed,{tasks:[...(p.tasks||[]),{text:capFirst(s.nk.trim()),st:"todo",date:td()}]});s.nk="";s._focusTaskInput=true;}
 function cfm(m,f){s.cm=m;s.cf=f;R();}
 function xcfm(){s.cm=null;s.cf=null;R();}
 
@@ -1093,8 +1093,10 @@ function mkRow(p){
       placeholder:"+ Ajouter une tâche…",
       style:{fontSize:"13px",padding:"5px 8px",border:"1.5px solid var(--border)",borderRadius:"6px",background:"var(--card)"},
       onInput:v=>{s.nk=v;},
-      onEnter:atk
+      onEnter:atk,
+      focusEnd:s._focusTaskInput
     }));
+    if(s._focusTaskInput)s._focusTaskInput=false;
     panel.append(tir);
 
     // Notes
