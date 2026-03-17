@@ -1324,10 +1324,9 @@ function mkRow(p){
   } else {
     const nameEl=richTask(p.name,{});
     nameEl.className="crd-name"+(isDone?" x":"");
-    nameEl.addEventListener("click",e=>{
+    if(!isDone)nameEl.addEventListener("click",e=>{
       e.stopPropagation();
-      if(isDone)return;
-      s.qed=p.id;R();
+      s.ed=p.id;s.nk="";s.noteEdit=false;s.qed=null;R();
     });
     top.append(nameEl);
   }
