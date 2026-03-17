@@ -1349,12 +1349,6 @@ function mkRow(p){
   if(isDone&&p.doneAt)meta.append(h("span",{style:{color:"var(--green)",fontSize:"10px",fontFamily:"monospace"}},"✓ "+shortDt(p.doneAt)));
   const db=dateBadge(p.due);
   if(db&&!isDone)meta.append(db);
-  // Expand arrow for full edit
-  if(!isDone){
-    const expArrow=h("span",{className:"rm",style:{fontSize:"14px",cursor:"pointer",color:"var(--muted)",padding:"2px 4px",marginLeft:"2px",flexShrink:"0"},onClick:e=>{e.stopPropagation();s.ed=p.id;s.nk="";s.noteEdit=false;s.qed=null;R();}});
-    expArrow.textContent="▸";
-    meta.append(expArrow);
-  }
   top.append(meta);c.append(top);
 
   if(ts.length){
