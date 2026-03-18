@@ -1521,7 +1521,11 @@ function R(){
       placeholder:"Nom de la tâche…",
       style:{fontSize:"14px",fontWeight:"500"},
       onInput:v=>{s.an=v;},
-      onEnter:()=>{if(s.an.trim()){qadd();s._qiOpen=false;}},
+      onEnter:()=>{if(s.an.trim()){
+        const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",tasks:[],note:""};
+        if(s._qiDate)n.due=s._qiDate;
+        ps([n,...s.p]);s.an="";s.nk="";s._qiOpen=false;s._qiDate=null;
+      }},
       focusEnd:true
     }));
     qi.append(qiInput);
