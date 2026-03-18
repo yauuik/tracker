@@ -1525,17 +1525,39 @@ function R(){
       focusEnd:true
     }));
     qi.append(qiInput);
-    // Date chip
-    const qiChips=h("div",{style:{display:"flex",gap:"6px",padding:"0 16px 10px"}});
-    const dateChip=h("span",{style:{display:"inline-flex",alignItems:"center",gap:"4px",padding:"4px 10px",borderRadius:"6px",border:"1px solid var(--border)",fontSize:"11px",color:"var(--sec)",cursor:"pointer",background:"transparent",fontFamily:"inherit"}});
-    dateChip.textContent="📅 Date";
-    qiChips.append(dateChip);
-    qi.append(qiChips);
-    // Footer
-    const qiFoot=h("div",{style:{display:"flex",justifyContent:"flex-end",gap:"8px",padding:"8px 16px",borderTop:"1px solid var(--border)"}});
+    // Footer: date button left, Annuler/Ajouter right
+    const qiFoot=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",padding:"8px 16px",borderTop:"1px solid var(--border)"}});
+    // Date button with SVG icon
+    const dateBtn=h("button",{style:{display:"inline-flex",alignItems:"center",gap:"5px",padding:"4px 10px",borderRadius:"6px",border:"1px solid var(--border)",fontSize:"11px",color:s._qiDate?"var(--accent)":"var(--sec)",cursor:"pointer",background:"transparent",fontFamily:"inherit",position:"relative"}});
+    const dIco=document.createElementNS("http://www.w3.org/2000/svg","svg");
+    dIco.setAttribute("width","13");dIco.setAttribute("height","13");dIco.setAttribute("viewBox","0 0 16 16");dIco.setAttribute("fill","none");dIco.style.flexShrink="0";
+    const dr1=document.createElementNS("http://www.w3.org/2000/svg","rect");
+    dr1.setAttribute("x","1.5");dr1.setAttribute("y","3");dr1.setAttribute("width","13");dr1.setAttribute("height","11.5");dr1.setAttribute("rx","2");dr1.setAttribute("stroke","currentColor");dr1.setAttribute("stroke-width","1.5");
+    const dr2=document.createElementNS("http://www.w3.org/2000/svg","line");
+    dr2.setAttribute("x1","1.5");dr2.setAttribute("y1","7");dr2.setAttribute("x2","14.5");dr2.setAttribute("y2","7");dr2.setAttribute("stroke","currentColor");dr2.setAttribute("stroke-width","1.5");
+    const dr3=document.createElementNS("http://www.w3.org/2000/svg","line");
+    dr3.setAttribute("x1","5");dr3.setAttribute("y1","1.5");dr3.setAttribute("x2","5");dr3.setAttribute("y2","4.5");dr3.setAttribute("stroke","currentColor");dr3.setAttribute("stroke-width","1.5");dr3.setAttribute("stroke-linecap","round");
+    const dr4=document.createElementNS("http://www.w3.org/2000/svg","line");
+    dr4.setAttribute("x1","11");dr4.setAttribute("y1","1.5");dr4.setAttribute("x2","11");dr4.setAttribute("y2","4.5");dr4.setAttribute("stroke","currentColor");dr4.setAttribute("stroke-width","1.5");dr4.setAttribute("stroke-linecap","round");
+    dIco.append(dr1,dr2,dr3,dr4);
+    dateBtn.append(dIco,document.createTextNode(s._qiDate?shortDt(s._qiDate):"Date"));
+    // Hidden date input
+    const dInput=h("input",{type:"date",style:{position:"absolute",opacity:"0",width:"0",height:"0",top:"0",left:"0"},value:s._qiDate||""});
+    dInput.setAttribute("min",new Date().toISOString().slice(0,10));
+    dInput.addEventListener("change",e=>{s._qiDate=e.target.value||null;R();});
+    dateBtn.append(dInput);
+    dateBtn.addEventListener("click",e=>{e.stopPropagation();dInput.showPicker?.();dInput.click();});
+    qiFoot.append(dateBtn);
+    // Spacer
+    qiFoot.append(h("div",{style:{flex:"1"}}));
+    // Buttons
     qiFoot.append(
-      h("button",{style:{padding:"6px 14px",borderRadius:"6px",border:"1px solid var(--border)",background:"var(--card)",color:"var(--text)",fontSize:"12px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{s.an="";s._qiOpen=false;R();}},"Annuler"),
-      h("button",{style:{padding:"6px 14px",borderRadius:"6px",border:"none",background:s.an.trim()?"var(--accent)":"var(--muted)",color:"#fff",fontSize:"12px",fontWeight:"600",cursor:s.an.trim()?"pointer":"default",fontFamily:"inherit",opacity:s.an.trim()?"1":".5"},onClick:()=>{if(s.an.trim()){qadd();s._qiOpen=false;}}},"Ajouter")
+      h("button",{style:{padding:"6px 14px",borderRadius:"6px",border:"1px solid var(--border)",background:"var(--card)",color:"var(--text)",fontSize:"12px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{s.an="";s._qiOpen=false;s._qiDate=null;R();}},"Annuler"),
+      h("button",{style:{padding:"6px 14px",borderRadius:"6px",border:"none",background:s.an.trim()?"var(--accent)":"var(--muted)",color:"#fff",fontSize:"12px",fontWeight:"600",cursor:s.an.trim()?"pointer":"default",fontFamily:"inherit",opacity:s.an.trim()?"1":".5"},onClick:()=>{if(s.an.trim()){
+        const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",tasks:[],note:""};
+        if(s._qiDate)n.due=s._qiDate;
+        ps([n,...s.p]);s.an="";s.nk="";s._qiOpen=false;s._qiDate=null;
+      }}},"Ajouter")
     );
     qi.append(qiFoot);
   }
