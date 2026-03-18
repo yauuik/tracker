@@ -1636,20 +1636,26 @@ function R(){
 
   a.append(w);
 
-  // Click outside expanded card → close
+  // Click outside expanded card or quick add → close
   if(s._outsideH){document.removeEventListener("mousedown",s._outsideH,true);s._outsideH=null;}
-  if((s.ed||s.qed)&&!s.cm){
+  if((s.ed||s.qed||s._qiOpen)&&!s.cm){
     const editId=s.ed||s.qed;
     s._outsideH=e=>{
-      if((!s.ed&&!s.qed)||s.cm)return;
+      if(s.cm)return;
       if(e.target.closest&&e.target.closest(".flatpickr-calendar"))return;
-      let el=e.target;
-      while(el){
-        if(el.getAttribute&&el.getAttribute("data-id")===editId)return;
-        if(el.className&&typeof el.className==="string"&&(el.className.includes("cfm")||el.className.includes("ov")))return;
-        el=el.parentElement;
+      // Check quick add
+      if(s._qiOpen&&e.target.closest&&e.target.closest(".quick"))return;
+      // Check edit card
+      if(editId){
+        let el=e.target;
+        while(el){
+          if(el.getAttribute&&el.getAttribute("data-id")===editId)return;
+          if(el.className&&typeof el.className==="string"&&(el.className.includes("cfm")||el.className.includes("ov")))return;
+          el=el.parentElement;
+        }
       }
       document.removeEventListener("mousedown",s._outsideH,true);s._outsideH=null;
+      if(s._qiOpen&&!e.target.closest?.(".quick")){s._qiOpen=false;}
       s.ed=null;s.qed=null;s.noteEdit=false;R();
     };
     setTimeout(()=>document.addEventListener("mousedown",s._outsideH,true),50);
