@@ -36,6 +36,12 @@ span.flatpickr-weekday{color:var(--sec) !important;font-weight:600 !important;fo
   --text:#323338;--sec:#676879;--muted:#C3C6D4;
   --border:#E6E9EF;--hover:#F5F6F8;
 }
+:root.theme-dark{
+  --bg:#1e1e1e;--card:#282828;--dark:#e8e8e8;
+  --accent:#de4c4a;--green:#4caf50;--amber:#ff9f1a;--red:#ff5555;--blue:#5297e5;
+  --text:#e8e8e8;--sec:#a0a0a0;--muted:#5a5a5a;
+  --border:#3a3a3a;--hover:#333333;
+}
 :root.theme-ims-dark{
   --bg:#000000;--card:#0a0a0a;--dark:#55bbff;
   --accent:#55bbff;--green:#44dd44;--amber:#ffff00;--red:#ff4444;--blue:#55bbff;
@@ -54,6 +60,13 @@ span.flatpickr-weekday{color:var(--sec) !important;font-weight:600 !important;fo
   --text:#33ff33;--sec:#22aa22;--muted:#1a6622;
   --border:#1a3a1a;--hover:#0d220d;
 }
+.theme-dark [contenteditable]{background:var(--card) !important;color:var(--text) !important;border-color:var(--border) !important;}
+.theme-dark input,.theme-dark textarea{background:var(--card) !important;color:var(--text) !important;border-color:var(--border) !important;}
+.theme-dark .ac-list{background:var(--card) !important;border-color:var(--border) !important;}
+.theme-dark .ac-item.sel{background:var(--hover) !important;}
+.theme-dark .mod{background:var(--card) !important;}
+.theme-dark .cfm{background:var(--card) !important;}
+.theme-dark .quick{background:var(--card) !important;border-color:var(--border) !important;}
 [class*="theme-ims"]{font-family:'IBM 3270','IBM Plex Mono','Courier New',monospace !important;}
 [class*="theme-ims"] body{font-family:'IBM 3270','IBM Plex Mono','Courier New',monospace !important;font-size:16px !important;}
 [class*="theme-ims"] .topbar h1{letter-spacing:.05em;text-transform:uppercase;}
@@ -1804,7 +1817,8 @@ function rSett(){
   thRow.append(thLeft);
   const themes=[
     {key:"",label:"Normal",bg:"#F6F7FB",fg:"#323338"},
-    {key:"ims-dark",label:"IMS Dark",bg:"#000",fg:"#00ffcc"},
+    {key:"dark",label:"Dark",bg:"#1e1e1e",fg:"#e8e8e8"},
+    {key:"ims-dark",label:"IMS Dark",bg:"#000",fg:"#44dd44"},
     {key:"ims-blue",label:"IMS Blue",bg:"#002244",fg:"#33dd33"},
     {key:"ims-green",label:"IMS Green",bg:"#001a00",fg:"#33ff33"},
   ];
