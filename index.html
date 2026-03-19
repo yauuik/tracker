@@ -863,10 +863,11 @@ function toast(msg,undoFn,duration){
 
 function onK(e){
   const ii=["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable;
-  if(e.key==="Escape"){if(s.cm)xcfm();else if(s._editTask){s._editTask=null;}else if(s.qed){s.qed=null;}else if(s.ed){s.ed=null;s.noteEdit=false;s._editTask=null;}else if(s.exp){s.exp=false;}else if(s.keys){s.keys=false;}else if(s.sett){s.sett=false;}else if(s.calc){s.calc=false;}else if(s.sel.size)s.sel.clear();e.preventDefault();R();return;}
+  if(e.key==="Escape"){if(s.cm)xcfm();else if(s.search){s.search=false;s.sq="";}else if(s._editTask){s._editTask=null;}else if(s.qed){s.qed=null;}else if(s.ed){s.ed=null;s.noteEdit=false;s._editTask=null;}else if(s.exp){s.exp=false;}else if(s.keys){s.keys=false;}else if(s.sett){s.sett=false;}else if(s.calc){s.calc=false;}else if(s.sel.size)s.sel.clear();e.preventDefault();R();return;}
   if(e.key==="Enter"){if(s.cm){e.preventDefault();s.cf?.();xcfm();return;}if(s.keys){e.preventDefault();s.keys=false;R();return;}if(s.ed&&!ii){e.preventDefault();s.ed=null;R();return;}}
   if(!ii&&!s.ed&&!s.exp&&!s.keys){
     if(e.key==="n"){e.preventDefault();document.querySelector(".quick .ce-field")?.focus();return;}
+    if(e.key==="/"){e.preventDefault();s.search=true;s.sq="";R();return;}
     if(e.key==="e"){e.preventDefault();s.exp=true;R();}
     if(e.key==="?"){e.preventDefault();s.keys=!s.keys;R();}
   }
@@ -1423,9 +1424,22 @@ function R(){
   const sc=scM[s.sy]||scM.synced;
 
   const urgSort=(a,b)=>{const ua=isUrgent(a)?0:1;const ub=isUrgent(b)?0:1;return ua-ub;};
-  const ip=s.p.filter(p=>p.status==="In Progress"&&!p.hidden).sort(urgSort);
-  const td2=s.p.filter(p=>p.status==="To Do"&&!p.hidden).sort(urgSort);
-  const dn=s.p.filter(p=>p.status==="Done"&&!p.hidden).sort((a,b)=>(b.doneAt||"").localeCompare(a.doneAt||""));
+
+  // Search filter: matches name, tasks, notes, due date, mentions
+  function matchSearch(p){
+    if(!s.sq)return true;
+    const q=s.sq.toLowerCase();
+    if(p.name&&p.name.toLowerCase().includes(q))return true;
+    if(p.note&&p.note.toLowerCase().includes(q))return true;
+    if(p.due&&p.due.includes(q))return true;
+    if(p.due&&shortDt(p.due).toLowerCase().includes(q))return true;
+    if(p.tasks&&p.tasks.some(t=>t.text&&t.text.toLowerCase().includes(q)))return true;
+    return false;
+  }
+
+  const ip=s.p.filter(p=>p.status==="In Progress"&&!p.hidden&&matchSearch(p)).sort(urgSort);
+  const td2=s.p.filter(p=>p.status==="To Do"&&!p.hidden&&matchSearch(p)).sort(urgSort);
+  const dn=s.p.filter(p=>p.status==="Done"&&!p.hidden&&matchSearch(p)).sort((a,b)=>(b.doneAt||"").localeCompare(a.doneAt||""));
   const hid=s.p.filter(p=>p.hidden);
 
   // Clean stale selection IDs
@@ -1452,6 +1466,8 @@ function R(){
     b.append(sv);return b;
   }
   acts.append(
+    // Search
+    mkIcon("Recherche",["M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z","M21 21l-4.35-4.35"],()=>{s.search=!s.search;s.sq="";R();}),
     // Shortcuts: ? in circle
     mkIcon("Raccourcis",["M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z","M9.5 9a2.5 2.5 0 0 1 4.9-.5c0 1.5-2.4 2-2.4 3.5","M12 17h.01"],()=>{s.keys=true;R();}),
     // Markdown: code brackets
@@ -1506,6 +1522,43 @@ function R(){
   });
   acts.append(syncWrap);
   tb.append(acts);w.append(tb);
+
+  // Search bar
+  if(s.search){
+    const sb2=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",padding:"8px 12px",background:"var(--card)",border:"1.5px solid var(--accent)",borderRadius:"10px",marginBottom:"16px",boxShadow:"0 0 0 3px rgba(97,97,255,.1)"}});
+    // Search icon
+    const sIco=document.createElementNS("http://www.w3.org/2000/svg","svg");
+    sIco.setAttribute("width","14");sIco.setAttribute("height","14");sIco.setAttribute("viewBox","0 0 24 24");sIco.setAttribute("fill","none");sIco.style.color="var(--muted)";sIco.style.flexShrink="0";
+    const sc1=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    sc1.setAttribute("cx","11");sc1.setAttribute("cy","11");sc1.setAttribute("r","8");sc1.setAttribute("stroke","currentColor");sc1.setAttribute("stroke-width","2");
+    const sl1=document.createElementNS("http://www.w3.org/2000/svg","line");
+    sl1.setAttribute("x1","21");sl1.setAttribute("y1","21");sl1.setAttribute("x2","16.65");sl1.setAttribute("y2","16.65");sl1.setAttribute("stroke","currentColor");sl1.setAttribute("stroke-width","2");sl1.setAttribute("stroke-linecap","round");
+    sIco.append(sc1,sl1);
+    sb2.append(sIco);
+    const sIn=h("input",{type:"text",value:s.sq||"",placeholder:"Rechercher partout…",style:{flex:"1",border:"none",outline:"none",fontSize:"14px",fontFamily:"inherit",color:"var(--text)",background:"transparent"}});
+    sIn.addEventListener("input",e=>{s.sq=e.target.value;R();});
+    sIn.addEventListener("keydown",e=>{if(e.key==="Escape"){s.search=false;s.sq="";R();}});
+    sb2.append(sIn);
+    // Clear button
+    if(s.sq){
+      const clr=h("button",{style:{background:"none",border:"none",fontSize:"14px",cursor:"pointer",color:"var(--muted)",padding:"2px 4px"}});
+      clr.textContent="×";
+      clr.addEventListener("click",()=>{s.sq="";R();});
+      sb2.append(clr);
+    }
+    // Close button
+    // Result count
+    if(s.sq){
+      const total=s.p.filter(p=>!p.hidden&&matchSearch(p)).length;
+      sb2.append(h("span",{style:{fontSize:"11px",color:"var(--muted)",whiteSpace:"nowrap"}},total+" résultat"+(total!==1?"s":"")));
+    }
+    const cls=h("button",{style:{background:"none",border:"none",fontSize:"11px",cursor:"pointer",color:"var(--muted)",padding:"2px 4px",fontFamily:"inherit"}});
+    cls.textContent="Fermer";
+    cls.addEventListener("click",()=>{s.search=false;s.sq="";R();});
+    sb2.append(cls);
+    w.append(sb2);
+    requestAnimationFrame(()=>sIn.focus());
+  }
 
   // Quick input — Todoist style, collapsed by default
   const qi=h("div",{className:"quick",style:{padding:"0",overflow:"hidden",cursor:s._qiOpen?"default":"text"}});
