@@ -1536,9 +1536,15 @@ function R(){
     sIco.append(sc1,sl1);
     sb2.append(sIco);
     const sIn=h("input",{type:"text",value:s.sq||"",placeholder:"Rechercher partout…",style:{flex:"1",border:"none",outline:"none",fontSize:"14px",fontFamily:"inherit",color:"var(--text)",background:"transparent"}});
-    sIn.addEventListener("input",e=>{s.sq=e.target.value;R();});
+    let searchT=null;
+    sIn.addEventListener("input",e=>{
+      s.sq=e.target.value;
+      if(searchT)clearTimeout(searchT);
+      searchT=setTimeout(()=>{s._searchFocus=true;R();},250);
+    });
     sIn.addEventListener("keydown",e=>{if(e.key==="Escape"){s.search=false;s.sq="";R();}});
     sb2.append(sIn);
+    if(s._searchFocus){s._searchFocus=false;requestAnimationFrame(()=>{sIn.focus();sIn.selectionStart=sIn.selectionEnd=sIn.value.length;});}
     // Clear button
     if(s.sq){
       const clr=h("button",{style:{background:"none",border:"none",fontSize:"14px",cursor:"pointer",color:"var(--muted)",padding:"2px 4px"}});
