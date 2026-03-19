@@ -1550,9 +1550,12 @@ function R(){
       // Update count
       const cnt=sb2.querySelector("[data-search-count]");
       if(cnt){const total=s.p.filter(p=>!p.hidden&&matchSearch(p)).length;cnt.textContent=total+" résultat"+(total!==1?"s":"");}
-      // Delayed full re-render for section counts
-      searchT=setTimeout(()=>{s._searchFocus=true;R();},800);
+      // Delayed full re-render only if user stopped typing
+      searchT=setTimeout(()=>{
+        if(document.activeElement!==sIn){s._searchFocus=true;R();}
+      },1500);
     });
+    sIn.addEventListener("blur",()=>{setTimeout(()=>{if(s.search)R();},200);});
     sIn.addEventListener("keydown",e=>{if(e.key==="Escape"){s.search=false;s.sq="";R();}});
     sb2.append(sIn);
     if(s._searchFocus){s._searchFocus=false;requestAnimationFrame(()=>{sIn.focus();sIn.selectionStart=sIn.selectionEnd=sIn.value.length;});}
