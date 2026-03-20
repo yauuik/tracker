@@ -1075,11 +1075,9 @@ function mkRow(p){
     const cr4=document.createElementNS("http://www.w3.org/2000/svg","line");
     cr4.setAttribute("x1","11");cr4.setAttribute("y1","1.5");cr4.setAttribute("x2","11");cr4.setAttribute("y2","4.5");cr4.setAttribute("stroke","currentColor");cr4.setAttribute("stroke-width","1.5");cr4.setAttribute("stroke-linecap","round");
     calIco.append(cr1,cr2,cr3,cr4);
-    dateRow.append(calIco);
-    dateRow.append(h("span",{style:{fontSize:"13px",color:"var(--sec)",fontWeight:"500"}},"Échéance"));
     const useFP=settings.flatpickr||false;
     const today=new Date().toISOString().slice(0,10);
-    const dateIn=h("input",{type:useFP?"text":"date",value:p.due||"",placeholder:useFP?"Choisir une date…":"",min:useFP?undefined:today,style:{fontSize:"13px",padding:"6px 10px",border:"1.5px solid var(--border)",borderRadius:"8px",fontFamily:"inherit",color:"var(--text)",background:"var(--card)",outline:"none",cursor:"pointer",marginLeft:"auto",textAlign:"center"}});
+    const dateIn=h("input",{type:useFP?"text":"date",value:p.due||"",placeholder:useFP?"Choisir une date…":"",min:useFP?undefined:today,style:{fontSize:"13px",padding:"6px 10px",border:"1.5px solid var(--border)",borderRadius:"8px",fontFamily:"inherit",color:"var(--text)",background:"var(--card)",outline:"none",cursor:"pointer",textAlign:"center"}});
     dateIn.addEventListener("change",e=>{
       const v=e.target.value;
       if(v&&v<today){e.target.value=p.due||"";return;}
@@ -1098,7 +1096,7 @@ function mkRow(p){
         });
       });
     }
-    dateRow.append(dateIn);
+    dateRow.append(calIco,dateIn);
     if(p.due){
       const db2=dateBadge(p.due);
       if(db2)dateRow.append(db2);
@@ -1253,7 +1251,7 @@ function mkRow(p){
     tb.append(expBtn);
     noteWrap.append(tb);
     // Editable area
-    const noteDiv=h("div",{contentEditable:"true",style:{padding:"20px 22px",fontSize:"12px",fontFamily:"inherit",lineHeight:"1.6",color:"var(--text)",outline:"none",minHeight:"150px",maxHeight:"400px",overflowY:"auto",wordBreak:"break-word"}});
+    const noteDiv=h("div",{contentEditable:"true",style:{padding:"26px 28px",fontSize:"12px",fontFamily:"inherit",lineHeight:"1.6",color:"var(--text)",outline:"none",minHeight:"150px",maxHeight:"400px",overflowY:"auto",wordBreak:"break-word"}});
     // Convert stored plain text to HTML (preserve line breaks)
     const noteVal=getNote(p);
     if(noteVal){
