@@ -1196,7 +1196,7 @@ function mkRow(p){
       });
       fullNote.addEventListener("paste",ev2=>{
         const html2=(ev2.clipboardData||window.clipboardData).getData("text/html");
-        if(html2){ev2.preventDefault();document.execCommand("insertHTML",false,html2.replace(/font-size\s*:\s*[^;"']+;?/gi,"").replace(/line-height\s*:\s*[^;"']+;?/gi,"").replace(/font-family\s*:\s*[^;"']+;?/gi,""));}
+        if(html2){ev2.preventDefault();const c2=html2.replace(/\s*style\s*=\s*"[^"]*"/gi,"").replace(/\s*style\s*=\s*'[^']*'/gi,"").replace(/\s*class\s*=\s*"[^"]*"/gi,"").replace(/\s*class\s*=\s*'[^']*'/gi,"").replace(/<font[^>]*>/gi,"").replace(/<\/font>/gi,"");document.execCommand("insertHTML",false,c2);}
       });
       m.append(fullNote);
       ov.append(m);
@@ -1251,10 +1251,12 @@ function mkRow(p){
       const html=(e.clipboardData||window.clipboardData).getData("text/html");
       if(html){
         e.preventDefault();
-        // Strip all font-size, line-height, font-family from pasted HTML
-        const clean=html.replace(/font-size\s*:\s*[^;"']+;?/gi,"")
-          .replace(/line-height\s*:\s*[^;"']+;?/gi,"")
-          .replace(/font-family\s*:\s*[^;"']+;?/gi,"");
+        // Strip all style attributes from pasted HTML
+        const clean=html.replace(/\s*style\s*=\s*"[^"]*"/gi,"")
+          .replace(/\s*style\s*=\s*'[^']*'/gi,"")
+          .replace(/\s*class\s*=\s*"[^"]*"/gi,"")
+          .replace(/\s*class\s*=\s*'[^']*'/gi,"")
+          .replace(/<font[^>]*>/gi,"").replace(/<\/font>/gi,"");
         document.execCommand("insertHTML",false,clean);
       }
     });
