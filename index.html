@@ -1558,7 +1558,7 @@ function R(){
     sIn.addEventListener("blur",()=>{setTimeout(()=>{if(s.search)R();},200);});
     sIn.addEventListener("keydown",e=>{if(e.key==="Escape"){s.search=false;s.sq="";R();}});
     sb2.append(sIn);
-    if(s._searchFocus){s._searchFocus=false;requestAnimationFrame(()=>{sIn.focus();sIn.selectionStart=sIn.selectionEnd=sIn.value.length;});}
+    if(s._searchFocus){s._searchFocus=false;requestAnimationFrame(()=>sIn.focus());}
     // Clear button
     if(s.sq){
       const clr=h("button",{style:{background:"none",border:"none",fontSize:"14px",cursor:"pointer",color:"var(--muted)",padding:"2px 4px"}});
