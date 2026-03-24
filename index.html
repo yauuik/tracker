@@ -1166,10 +1166,33 @@ function mkRow(p){
       ov.addEventListener("mouseup",ev=>{if(ovDown&&ev.target===ov)ov.remove();ovDown=false;});
       ov.addEventListener("touchend",ev=>{if(ev.target===ov)ov.remove();});
       const m=h("div",{className:"mod",style:{maxWidth:"800px",display:"flex",flexDirection:"column",overflow:"hidden",height:"90vh"},onClick:ev=>ev.stopPropagation()});
-      m.append(h("div",{className:"mod-hdr"},
-        h("h3",{},p.name.replace(/@[\w\u00C0-\u024F]+\s*/g,"").replace(/!!/g,"").trim()||"Note"),
-        h("button",{className:"mod-x",onClick:()=>ov.remove()},"✕")
-      ));
+      // Header with maximize + close
+      const mHdr=h("div",{className:"mod-hdr"});
+      mHdr.append(h("h3",{},p.name.replace(/@[\w\u00C0-\u024F]+\s*/g,"").replace(/!!/g,"").trim()||"Note"));
+      const hdrBtns=h("div",{style:{display:"flex",gap:"4px",alignItems:"center"}});
+      // Maximize toggle
+      let isMax=false;
+      const maxBtn=h("button",{style:{background:"none",border:"none",cursor:"pointer",fontSize:"14px",color:"var(--muted)",padding:"4px",lineHeight:"1"}});
+      maxBtn.textContent="⛶";
+      maxBtn.title="Plein écran";
+      maxBtn.addEventListener("click",()=>{
+        isMax=!isMax;
+        if(isMax){
+          m.style.maxWidth="100vw";m.style.width="100vw";m.style.height="100vh";
+          m.style.borderRadius="0";m.style.margin="0";
+          ov.style.padding="0";
+          maxBtn.textContent="⊡";maxBtn.title="Réduire";
+        } else {
+          m.style.maxWidth="800px";m.style.width="";m.style.height="90vh";
+          m.style.borderRadius="";m.style.margin="";
+          ov.style.padding="";
+          maxBtn.textContent="⛶";maxBtn.title="Plein écran";
+        }
+      });
+      hdrBtns.append(maxBtn);
+      hdrBtns.append(h("button",{className:"mod-x",onClick:()=>ov.remove()},"✕"));
+      mHdr.append(hdrBtns);
+      m.append(mHdr);
       // Full toolbar
       const tb2=h("div",{style:{display:"flex",gap:"2px",padding:"6px 8px",borderBottom:"1px solid var(--border)",background:"var(--hover)",flexShrink:"0"}});
       function tb2Btn(label,cmd,val){
