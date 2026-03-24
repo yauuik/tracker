@@ -1123,9 +1123,9 @@ function mkRow(p){
     // Notes — always editable when project is open, with mini toolbar
     const noteWrap=h("div",{style:{marginTop:"8px",borderRadius:"8px",border:"1.5px solid var(--border)",overflow:"hidden",background:"var(--card)"}});
     // Toolbar
-    const tb=h("div",{style:{display:"flex",gap:"2px",padding:"4px 6px",borderBottom:"1px solid var(--border)",background:"var(--hover)"}});
+    const tb=h("div",{style:{display:"flex",gap:"2px",padding:"6px 8px",borderBottom:"1px solid var(--border)",background:"var(--hover)"}});
     function tbBtn(label,cmd,val){
-      const b=h("button",{style:{background:"none",border:"none",cursor:"pointer",padding:"3px 6px",borderRadius:"4px",fontSize:"12px",fontWeight:"600",color:"var(--sec)",fontFamily:"inherit",lineHeight:"1"}});
+      const b=h("button",{style:{background:"none",border:"none",cursor:"pointer",padding:"4px 8px",borderRadius:"4px",fontSize:"13px",fontWeight:"600",color:"var(--sec)",fontFamily:"inherit",lineHeight:"1"}});
       b.textContent=label;
       b.addEventListener("mousedown",e=>{e.preventDefault();});
       b.addEventListener("click",e=>{
@@ -1135,7 +1135,7 @@ function mkRow(p){
       });
       return b;
     }
-    tb.append(tbBtn("B","bold"),tbBtn("I","italic"),tbBtn("—","insertHorizontalRule"),tbBtn("• Liste","insertUnorderedList"),tbBtn("1. Liste","insertOrderedList"));
+    tb.append(tbBtn("B","bold"),tbBtn("I","italic"),tbBtn("U","underline"),tbBtn("—","insertHorizontalRule"),tbBtn("• Liste","insertUnorderedList"),tbBtn("1. Liste","insertOrderedList"));
     // Link button
     const linkBtn=h("button",{style:{background:"none",border:"none",cursor:"pointer",padding:"3px 6px",borderRadius:"4px",fontSize:"12px",fontWeight:"600",color:"var(--sec)",fontFamily:"inherit",lineHeight:"1"}});
     linkBtn.textContent="🔗";
