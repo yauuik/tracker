@@ -1292,9 +1292,11 @@ function mkRow(p){
     }
     noteDiv.addEventListener("input",()=>{up(p.id,{note:noteDiv.innerHTML},true);});
     noteDiv.addEventListener("blur",()=>{linkifyNote(noteDiv);up(p.id,{note:noteDiv.innerHTML},true);});
-    // Make existing links clickable (open in new tab)
+    noteDiv.addEventListener("mousedown",e=>e.stopPropagation());
     noteDiv.addEventListener("click",e=>{
-      if(e.target.tagName==="A"){e.preventDefault();e.stopPropagation();window.open(e.target.href,"_blank");}
+      e.stopPropagation();
+      const link=e.target.closest("a");
+      if(link){e.preventDefault();window.open(link.href,"_blank");}
     });
     noteDiv.addEventListener("paste",e=>{
       const html=(e.clipboardData||window.clipboardData).getData("text/html");
@@ -1312,7 +1314,6 @@ function mkRow(p){
       }
     });
     noteDiv.addEventListener("mousedown",e=>e.stopPropagation());
-    noteDiv.addEventListener("click",e=>e.stopPropagation());
     noteWrap.append(noteDiv);
     panel.append(noteWrap);
 
