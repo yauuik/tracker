@@ -89,6 +89,7 @@ span.flatpickr-weekday{color:var(--sec) !important;font-weight:600 !important;fo
 [contenteditable] ul,[contenteditable] ol{padding-left:20px;margin:4px 0;}
 [contenteditable] li{margin:2px 0;}
 [contenteditable] h1,[contenteditable] h2,[contenteditable] h3,[contenteditable] h4,[contenteditable] h5,[contenteditable] h6{font-size:inherit;font-weight:700;margin:8px 0 4px;color:var(--text);}
+[contenteditable] label{font-size:inherit;color:inherit;display:inline;}
 [contenteditable] h1{font-size:16px;margin:8px 0 4px;}
 [contenteditable] h2{font-size:15px;margin:6px 0 4px;}
 [contenteditable] h3{font-size:14px;margin:6px 0 3px;}
@@ -1243,7 +1244,7 @@ function mkRow(p){
       });
       fullNote.addEventListener("paste",ev2=>{
         const html2=(ev2.clipboardData||window.clipboardData).getData("text/html");
-        if(html2){ev2.preventDefault();const c2=html2.replace(/\s*style\s*=\s*"[^"]*"/gi,"").replace(/\s*style\s*=\s*'[^']*'/gi,"").replace(/\s*class\s*=\s*"[^"]*"/gi,"").replace(/\s*class\s*=\s*'[^']*'/gi,"").replace(/<font[^>]*>/gi,"").replace(/<\/font>/gi,"");document.execCommand("insertHTML",false,c2);}
+        if(html2){ev2.preventDefault();const c2=html2.replace(/\s*style\s*=\s*"[^"]*"/gi,"").replace(/\s*style\s*=\s*'[^']*'/gi,"").replace(/\s*class\s*=\s*"[^"]*"/gi,"").replace(/\s*class\s*=\s*'[^']*'/gi,"").replace(/<font[^>]*>/gi,"").replace(/<\/font>/gi,"").replace(/<label[^>]*>/gi,"").replace(/<\/label>/gi,"").replace(/<!--\s*(?:Start|End)Fragment\s*-->/gi,"");document.execCommand("insertHTML",false,c2);}
       });
       m.append(fullNote);
       m.append(srcArea);
@@ -1304,7 +1305,9 @@ function mkRow(p){
           .replace(/\s*style\s*=\s*'[^']*'/gi,"")
           .replace(/\s*class\s*=\s*"[^"]*"/gi,"")
           .replace(/\s*class\s*=\s*'[^']*'/gi,"")
-          .replace(/<font[^>]*>/gi,"").replace(/<\/font>/gi,"");
+          .replace(/<font[^>]*>/gi,"").replace(/<\/font>/gi,"")
+          .replace(/<label[^>]*>/gi,"").replace(/<\/label>/gi,"")
+          .replace(/<!--\s*(?:Start|End)Fragment\s*-->/gi,"");
         document.execCommand("insertHTML",false,clean);
       }
     });
