@@ -289,7 +289,7 @@ const SETTINGS_KEY="taskr-settings";
 function loadSettings(){try{return JSON.parse(localStorage.getItem(SETTINGS_KEY))||{};}catch{return {};}}
 function saveSettings(v){try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(v));}catch{}}
 let settings=loadSettings();
-let s={p:[],ok:false,sy:"loading",ed:null,exp:false,keys:false,sett:false,cm:null,cf:null,nk:"",an:"",sel:new Set(),doneOpen:false,sh:false,noteEdit:false};
+let s={p:[],ok:false,sy:"loading",ed:null,exp:false,keys:false,sett:false,cm:null,cf:null,nk:"",an:"",sel:new Set(),doneOpen:false,sh:false,noteEdit:false,_dateSort:settings._dateSort||null};
 let svT=null;
 const syncLogs=[];
 function slog(type,msg){
@@ -1836,6 +1836,7 @@ function R(){
     if(!s._dateSort)s._dateSort="asc";
     else if(s._dateSort==="asc")s._dateSort="desc";
     else s._dateSort=null;
+    settings._dateSort=s._dateSort;saveSettings(settings);
     R();
   });
   sortRow.append(sortBtn);
