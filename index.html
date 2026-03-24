@@ -1195,18 +1195,24 @@ function mkRow(p){
       m.append(mHdr);
       // Full toolbar
       const tb2=h("div",{style:{display:"flex",gap:"2px",padding:"6px 8px",borderBottom:"1px solid var(--border)",background:"var(--hover)",flexShrink:"0"}});
+      const fmtBtns=[];
       function tb2Btn(label,cmd,val){
-        const b=h("button",{style:{background:"none",border:"none",cursor:"pointer",padding:"4px 8px",borderRadius:"4px",fontSize:"13px",fontWeight:"600",color:"var(--sec)",fontFamily:"inherit",lineHeight:"1"}});
+        const b=h("button",{style:{background:"none",border:"none",cursor:"pointer",padding:"4px 8px",borderRadius:"4px",fontSize:"13px",fontWeight:"600",color:"var(--sec)",fontFamily:"inherit",lineHeight:"1",transition:"opacity .15s"}});
         b.textContent=label;
         b.addEventListener("mousedown",ev=>ev.preventDefault());
         b.addEventListener("click",ev=>{
           ev.preventDefault();
+          if(srcMode)return;
           const ed=m.querySelector("[contenteditable]");
           if(ed){ed.focus();document.execCommand(cmd,false,val||null);}
         });
+        fmtBtns.push(b);
         return b;
       }
       tb2.append(tb2Btn("B","bold"),tb2Btn("I","italic"),tb2Btn("U","underline"),tb2Btn("—","insertHorizontalRule"),tb2Btn("• Liste","insertUnorderedList"),tb2Btn("1. Liste","insertOrderedList"));
+      function setFmtEnabled(enabled){
+        fmtBtns.forEach(b=>{b.style.opacity=enabled?"1":".3";b.style.cursor=enabled?"pointer":"default";});
+      }
       // Source toggle
       const srcBtn=h("button",{style:{background:"none",border:"none",cursor:"pointer",padding:"4px 8px",borderRadius:"4px",fontSize:"11px",fontWeight:"600",color:"var(--muted)",fontFamily:"monospace",lineHeight:"1",marginLeft:"auto"}});
       srcBtn.textContent="</>"; 
@@ -1251,6 +1257,7 @@ function mkRow(p){
           srcBtn.style.color="var(--accent)";
           lnBtn.style.display="";
           lnBtn.style.color=showLineNums?"var(--accent)":"var(--muted)";
+          setFmtEnabled(false);
           updateGutter();
           srcArea.focus();
         } else {
@@ -1261,6 +1268,7 @@ function mkRow(p){
           srcWrap.style.display="none";
           srcBtn.style.color="var(--muted)";
           lnBtn.style.display="none";
+          setFmtEnabled(true);
           fullNote.focus();
         }
       });
