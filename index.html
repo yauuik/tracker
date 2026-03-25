@@ -1801,6 +1801,13 @@ function R(){
         focusEnd:true
       });
       sheet.append(addWrap);
+      // Footer with buttons
+      const sheetFoot=h("div",{style:{display:"flex",justifyContent:"flex-end",gap:"8px",marginTop:"12px"}});
+      sheetFoot.append(
+        h("button",{style:{padding:"10px 18px",borderRadius:"8px",border:"1px solid var(--border)",background:"var(--card)",color:"var(--text)",fontSize:"14px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{s.an="";ov.remove();}},"Annuler"),
+        h("button",{style:{padding:"10px 18px",borderRadius:"8px",border:"none",background:"var(--accent)",color:"#fff",fontSize:"14px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{if(s.an.trim()){qadd();ov.remove();}}},"Ajouter")
+      );
+      sheet.append(sheetFoot);
       ov.append(sheet);
       document.getElementById("app").append(ov);
       // Auto-focus after render
