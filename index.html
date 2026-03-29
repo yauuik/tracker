@@ -105,8 +105,6 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
 @keyframes slideIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-.row{animation:slideIn .25s ease;}
-.sec-hdr{animation:fadeIn .3s ease;}
 
 .wrap{max-width:680px;margin:0 auto;padding:24px 20px calc(40px + env(safe-area-inset-bottom,0));padding-left:max(20px,env(safe-area-inset-left,0));padding-right:max(20px,env(safe-area-inset-right,0));}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
@@ -972,7 +970,7 @@ function togT(pid,i,reverse){
 function qadd(){
   if(!s.an.trim())return;
   const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",tasks:[],note:""};
-  ps([n,...s.p]);
+  s._newId=n.id;ps([n,...s.p]);
   s.an="";s.nk="";
 }
 function atk(){if(!s.nk.trim()||!s.ed)return;const p=s.p.find(x=>x.id===s.ed);up(s.ed,{tasks:[...(p.tasks||[]),{text:capFirst(s.nk.trim()),st:"todo",date:td()}]});s.nk="";s._focusTaskInput=true;}
@@ -1047,6 +1045,7 @@ function mkRow(p){
   const isTodo=p.status==="To Do";
   const isOpen=s.ed===p.id;
   const row=h("div",{className:"row"});
+  if(s._newId===p.id){row.style.animation="slideIn .25s ease";s._newId=null;}
   row.setAttribute("data-id",p.id);
 
   // Swipe on mobile to change status
@@ -1628,7 +1627,7 @@ function mkAddForm(opts){
     onEnter:()=>{if(s.an.trim()){
       const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",tasks:[],note:""};
       if(formDate)n.due=formDate;
-      ps([n,...s.p]);s.an="";s.nk="";
+      s._newId=n.id;ps([n,...s.p]);s.an="";s.nk="";
       if(opts.onDone)opts.onDone();
     }},
     focusEnd:true
@@ -1655,7 +1654,7 @@ function mkAddForm(opts){
     h("button",{style:{padding:bPad,borderRadius:"6px",border:"none",background:s.an.trim()?"var(--accent)":"var(--muted)",color:"#fff",fontSize:bFs,fontWeight:"600",cursor:s.an.trim()?"pointer":"default",fontFamily:"inherit",opacity:s.an.trim()?"1":".5"},onClick:()=>{if(s.an.trim()){
       const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",tasks:[],note:""};
       if(formDate)n.due=formDate;
-      ps([n,...s.p]);s.an="";s.nk="";
+      s._newId=n.id;ps([n,...s.p]);s.an="";s.nk="";
       if(opts.onDone)opts.onDone();
     }}},"Ajouter")
   );
