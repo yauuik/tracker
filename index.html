@@ -1981,7 +1981,7 @@ function R(){
 
       const dayRow=h("div",{style:{borderBottom:d<6?"1px solid var(--border)":"none",padding:"10px 0",minHeight:"48px"}});
       const dayHdr=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px"}});
-      const dayNum=h("div",{style:{width:"30px",height:"30px",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",fontWeight:isToday?"700":"500",background:isToday?"var(--accent)":"transparent",color:isToday?"#fff":isWeekend?"var(--muted)":"var(--text)"}});
+      const dayNum=h("div",{style:{width:"38px",height:"38px",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px",fontWeight:isToday?"700":"500",background:isToday?"var(--accent)":"transparent",color:isToday?"#fff":isWeekend?"var(--muted)":"var(--text)"}});
       dayNum.textContent=day.getDate();
       dayHdr.append(dayNum,h("span",{style:{fontSize:"12px",fontWeight:"600",color:isToday?"var(--accent)":isWeekend?"var(--muted)":"var(--sec)",textTransform:"uppercase"}},jourNoms[d]));
       dayRow.append(dayHdr);
