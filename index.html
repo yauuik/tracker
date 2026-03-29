@@ -491,12 +491,16 @@ function parseTask(txt){
 
 // Render task content: mention tags first, then clean text with links
 function mentionSpan(name){
-  const sp=h("span",{className:"mention"});
+  const sp=h("span",{className:"mention",style:{cursor:"pointer"}});
   if(settings.mentionIcon!==false){
     sp.append(mkSvg("person","10",{opacity:".6",verticalAlign:"middle",marginTop:"-2px"}));
   }
   const displayName=name.charAt(0).toUpperCase()+name.slice(1);
   sp.append(document.createTextNode(displayName));
+  sp.addEventListener("click",e=>{
+    e.stopPropagation();
+    s.search=true;s.sq="@"+name;R();
+  });
   return sp;
 }
 function richTask(txt,style){
