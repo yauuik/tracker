@@ -1153,13 +1153,20 @@ function mkRow(p){
 
   // ═══ EXPANDED STATE ═══
   if(isOpen){
-    const c=h("div",{className:"crd crd-open",style:{background:"var(--card)",border:"1.5px solid var(--border)",borderRadius:"12px",padding:"16px 18px",marginTop:"4px",marginBottom:"4px",boxShadow:"0 2px 12px rgba(0,0,0,.06)"}});
+    const c=h("div",{className:"crd crd-open",style:{background:"var(--card)",border:"1.5px solid var(--border)",borderRadius:"12px",padding:"16px 18px",marginTop:"4px",marginBottom:"4px",boxShadow:"0 2px 12px rgba(0,0,0,.06)",position:"relative"}});
     c.oncontextmenu=e=>{e.preventDefault();s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);R();};
+
+    // Close button top-right
+    const closeBtn=h("button",{style:{position:"absolute",top:"10px",right:"10px",background:"none",border:"none",cursor:"pointer",padding:"4px",display:"flex",alignItems:"center",justifyContent:"center",borderRadius:"4px",transition:"background .15s"},onClick:e=>{e.stopPropagation();s.ed=null;s.noteEdit=false;R();}});
+    closeBtn.append(mkSvg("close","16",{color:"var(--muted)"}));
+    closeBtn.addEventListener("mouseenter",()=>{closeBtn.style.background="var(--hover)";});
+    closeBtn.addEventListener("mouseleave",()=>{closeBtn.style.background="none";});
+    c.append(closeBtn);
 
     // Name input — large, clean
     const nameWrap=mentionField({
       value:p.name,
-      style:{fontSize:"16px",fontWeight:"600",background:"transparent",padding:"0 0 12px"},
+      style:{fontSize:"16px",fontWeight:"600",background:"transparent",padding:"0 24px 12px 0"},
       onInput:v=>up(p.id,{name:capFirst(v)},true),
       onEnter:()=>{s.ed=null;s.noteEdit=false;R();},
       focusEnd:true
@@ -1208,7 +1215,7 @@ function mkRow(p){
         if(st==="done"&&t.doneAt)it.append(h("span",{style:{fontSize:"10px",color:"var(--muted)",fontFamily:"monospace",whiteSpace:"nowrap",paddingLeft:"6px"}},shortDt(t.doneAt)));
         // Delete button per task
         const delT=h("button",{className:"rm",style:{padding:"4px 6px",flexShrink:"0",display:"flex",alignItems:"center"},onClick:e=>{e.stopPropagation();const backup=[...ts];const x=[...ts];x.splice(i,1);up(p.id,{tasks:x});toast("Tâche supprimée",()=>{up(p.id,{tasks:backup});});}});
-        delT.append(mkSvg("trash","14",{color:"var(--muted)"}));
+        delT.append(mkSvg("trash","16",{color:"var(--muted)"}));
         it.append(delT);
         itd.append(it);
       });
@@ -1495,12 +1502,10 @@ function mkRow(p){
     panel.append(noteWrap);
 
     // Footer
-    const ft=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:"6px",marginTop:"6px"}});
-    const delProjBtn=h("button",{className:"btn-t",style:{color:"var(--red)",fontSize:"10px",padding:"2px 6px",minHeight:"auto",display:"flex",alignItems:"center",gap:"4px"},onClick:()=>{const backup=[...s.p];const name=p.name;ps(s.p.filter(x=>x.id!==p.id));s.ed=null;toast("\""+name.replace(/@[\w\u00C0-\u024F]+\s*/g,"").replace(/!!/g,"").trim()+"\" supprimé",()=>{ps(backup);});}});
-    delProjBtn.append(mkSvg("trash","12",{color:"var(--red)"}),"Supprimer");
-    const closeProjBtn=h("button",{style:{background:"none",border:"1.5px solid var(--border)",borderRadius:"6px",cursor:"pointer",padding:"4px 10px",display:"flex",alignItems:"center",gap:"4px",fontFamily:"inherit"},onClick:()=>{s.ed=null;s.noteEdit=false;R();}});
-    closeProjBtn.append(mkSvg("close","12",{color:"var(--sec)"}),"");
-    ft.append(delProjBtn,closeProjBtn);
+    const ft=h("div",{style:{display:"flex",justifyContent:"flex-start",paddingTop:"6px",marginTop:"6px"}});
+    const delProjBtn=h("button",{className:"btn-t",style:{color:"var(--red)",padding:"6px",minHeight:"auto",display:"flex",alignItems:"center",borderRadius:"6px",transition:"background .15s"},onClick:()=>{const backup=[...s.p];const name=p.name;ps(s.p.filter(x=>x.id!==p.id));s.ed=null;toast("\""+name.replace(/@[\w\u00C0-\u024F]+\s*/g,"").replace(/!!/g,"").trim()+"\" supprimé",()=>{ps(backup);});}});
+    delProjBtn.append(mkSvg("trash","18",{color:"var(--red)"}));
+    ft.append(delProjBtn);
     panel.append(ft);
     c.append(panel);
 
@@ -1619,7 +1624,7 @@ function mkRow(p){
     row.append(c,hBtn);
   } else {
     const delBtn=h("button",{className:"rm",style:{padding:"4px 8px",flexShrink:"0",alignSelf:"flex-start",marginTop:"10px",display:"flex",alignItems:"center"},onClick:e=>{e.stopPropagation();const backup=[...s.p];const name=p.name;ps(s.p.filter(x=>x.id!==p.id));toast("\""+name.replace(/@[\w\u00C0-\u024F]+\s*/g,"").replace(/!!/g,"").trim()+"\" supprimé",()=>{ps(backup);});}});
-    delBtn.append(mkSvg("trash","14",{color:"var(--muted)"}));
+    delBtn.append(mkSvg("trash","16",{color:"var(--muted)"}));
     row.append(c,delBtn);
   }
   return row;
