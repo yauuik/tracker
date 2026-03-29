@@ -980,6 +980,21 @@ function mkRow(p){
   const row=h("div",{className:"row"});
   row.setAttribute("data-id",p.id);
 
+  // Swipe on mobile to change status
+  if(window.innerWidth<600&&!isOpen){
+    let swX=null,swY=null;
+    row.addEventListener("touchstart",e=>{swX=e.touches[0].clientX;swY=e.touches[0].clientY;},{passive:true});
+    row.addEventListener("touchend",e=>{
+      if(swX===null)return;
+      const dx=e.changedTouches[0].clientX-swX;
+      const dy=Math.abs(e.changedTouches[0].clientY-swY);
+      swX=null;
+      if(dy>30||Math.abs(dx)<60)return;// vertical scroll or too short
+      if(dx>60)togP(p.id,false);// swipe right = advance
+      else if(dx<-60)togP(p.id,true);// swipe left = go back
+    },{passive:true});
+  }
+
   // Drag & Drop — To Do only, collapsed only — custom mouse/touch
   if(isTodo&&!isOpen){
     row.style.cursor="grab";
