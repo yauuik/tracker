@@ -1536,8 +1536,12 @@ function mkRow(p){
   }
 
   // ═══ COLLAPSED STATE ═══
-  const c=h("div",{className:"crd"});
+  const c=h("div",{className:"crd",style:{cursor:"pointer"}});
   c.oncontextmenu=e=>{e.preventDefault();s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);R();};
+  c.addEventListener("click",e=>{
+    if(e.target.closest("a")||e.target.closest(".bx-s")||e.target.closest(".rm")||e.target.closest(".mention"))return;
+    e.stopPropagation();s.ed=p.id;s.nk="";s.noteEdit=false;s.qed=null;R();
+  });
 
   const {urgent:projUrgent}=parseTask(p.name);
   if(!isDone&&(projUrgent||isUrgent(p)))row.classList.add("row-urgent");
@@ -1556,10 +1560,6 @@ function mkRow(p){
   } else {
     const nameEl=richTask(p.name,{});
     nameEl.className="crd-name"+(isDone?" x":"");
-    if(!isDone)nameEl.addEventListener("click",e=>{
-      e.stopPropagation();
-      s.ed=p.id;s.nk="";s.noteEdit=false;s.qed=null;R();
-    });
     top.append(nameEl);
   }
   const meta=h("div",{className:"meta",style:{display:"flex",alignItems:"center",gap:"6px",justifyContent:"flex-end"}});
