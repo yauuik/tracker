@@ -85,9 +85,9 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
 .quick input::placeholder{color:var(--muted);}
 
 .sec-hdr{display:flex;align-items:center;gap:8px;padding:6px 0;margin-bottom:4px;margin-top:20px;}
-.sec-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.sec-label{font-size:12px;font-weight:600;color:var(--sec);text-transform:uppercase;letter-spacing:.04em;}
-.sec-count{font-size:11px;color:var(--muted);font-weight:500;}
+.sec-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.sec-label{font-size:14px;font-weight:600;color:var(--sec);text-transform:uppercase;letter-spacing:.04em;}
+.sec-count{font-size:13px;color:var(--muted);font-weight:500;}
 .sec-toggle{background:none;border:none;cursor:pointer;color:var(--sec);font-size:13px;transition:transform .2s;padding:2px 4px;}
 .sec-toggle.open{transform:rotate(90deg);}
 .sec-line{flex:1;height:1px;background:var(--border);}
@@ -1929,16 +1929,16 @@ function R(){
   // Sections
   if(ip.length){
     const ipWrap=h("div",{style:{background:"rgba(253,171,61,.04)",borderRadius:"10px",padding:"6px 10px",margin:"0 -10px",overflow:"visible"}});
-    ipWrap.append(mkSec("In Progress","#FDAB3D",ip.length));
+    ipWrap.append(mkSec("En cours","#FDAB3D",ip.length));
     const cards=h("div",{className:"cards"});ip.forEach(p=>cards.append(mkRow(p)));ipWrap.append(cards);
     w.append(ipWrap);
   }
   if(td2.length){
-    w.append(mkSec("To Do","#0086C0",td2.length));
+    w.append(mkSec("À faire","#0086C0",td2.length));
     const cards=h("div",{className:"cards"});td2.forEach(p=>cards.append(mkRow(p)));w.append(cards);
   }
   if(dn.length){
-    w.append(mkSec("Done","#00C875",dn.length,true,s.doneOpen,()=>{s.doneOpen=!s.doneOpen;R();}));
+    w.append(mkSec("Terminé","#00C875",dn.length,true,s.doneOpen,()=>{s.doneOpen=!s.doneOpen;R();}));
     if(s.doneOpen){
       // Group by day
       const groups={};
