@@ -1544,6 +1544,56 @@ function mkRow(p){
   return row;
 }
 
+// ─── Shared Add Form (desktop + mobile) ───
+function mkAddForm(opts){
+  // opts: {fontSize, padding, btnPad, btnFont, onDone}
+  const fs2=opts.fontSize||"14px";const pd=opts.padding||"12px 16px";
+  const bPad=opts.btnPad||"6px 14px";const bFs=opts.btnFont||"12px";
+  const wrap=h("div");
+  let formDate=null;
+  const inputWrap=h("div",{style:{padding:pd.replace(/\s.*$/,"")+" "+pd.replace(/^.*\s/,"")}});
+  inputWrap.append(mentionField({
+    value:s.an,placeholder:"Nom de la tâche…",
+    style:{fontSize:fs2,fontWeight:"500"},
+    onInput:v=>{s.an=v;},
+    onEnter:()=>{if(s.an.trim()){
+      const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",tasks:[],note:""};
+      if(formDate)n.due=formDate;
+      ps([n,...s.p]);s.an="";s.nk="";
+      if(opts.onDone)opts.onDone();
+    }},
+    focusEnd:true
+  }));
+  wrap.append(inputWrap);
+  // Footer
+  const foot=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",padding:"8px "+pd.replace(/^.*\s/,""),borderTop:"1px solid var(--border)"}});
+  // Date button
+  const dateBtn=h("button",{style:{display:"inline-flex",alignItems:"center",gap:"5px",padding:bPad,borderRadius:"6px",border:"1px solid var(--border)",fontSize:bFs,color:"var(--sec)",cursor:"pointer",background:"transparent",fontFamily:"inherit",position:"relative"}});
+  const dateLbl=document.createTextNode("Date");
+  dateBtn.append(mkSvg("calendar","13"),dateLbl);
+  const dateIn=h("input",{type:"date",style:{position:"absolute",opacity:"0",width:"0",height:"0"},value:""});
+  dateIn.setAttribute("min",new Date().toISOString().slice(0,10));
+  dateIn.addEventListener("change",e=>{
+    formDate=e.target.value||null;
+    dateLbl.textContent=formDate?shortDt(formDate):"Date";
+    dateBtn.style.color=formDate?"var(--accent)":"var(--sec)";
+  });
+  dateBtn.append(dateIn);
+  dateBtn.addEventListener("click",e=>{e.stopPropagation();dateIn.showPicker?.();dateIn.click();});
+  foot.append(dateBtn,h("div",{style:{flex:"1"}}));
+  foot.append(
+    h("button",{style:{padding:bPad,borderRadius:"6px",border:"1px solid var(--border)",background:"var(--card)",color:"var(--text)",fontSize:bFs,fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{s.an="";if(opts.onDone)opts.onDone();else R();}},"Annuler"),
+    h("button",{style:{padding:bPad,borderRadius:"6px",border:"none",background:s.an.trim()?"var(--accent)":"var(--muted)",color:"#fff",fontSize:bFs,fontWeight:"600",cursor:s.an.trim()?"pointer":"default",fontFamily:"inherit",opacity:s.an.trim()?"1":".5"},onClick:()=>{if(s.an.trim()){
+      const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",tasks:[],note:""};
+      if(formDate)n.due=formDate;
+      ps([n,...s.p]);s.an="";s.nk="";
+      if(opts.onDone)opts.onDone();
+    }}},"Ajouter")
+  );
+  wrap.append(foot);
+  return wrap;
+}
+
 function mkSec(label,color,count,toggle,isOpen,onToggle){
   const hdr=h("div",{className:"sec-hdr"});
   hdr.append(h("div",{className:"sec-dot",style:{background:color}}));
@@ -1735,44 +1785,7 @@ function R(){
     qi.append(qiCollapsed);
   } else {
     // Expanded state
-    const qiInput=h("div",{style:{padding:"12px 16px 8px"}});
-    qiInput.append(mentionField({
-      value:s.an,
-      placeholder:"Nom de la tâche…",
-      style:{fontSize:"14px",fontWeight:"500"},
-      onInput:v=>{s.an=v;},
-      onEnter:()=>{if(s.an.trim()){
-        const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",tasks:[],note:""};
-        if(s._qiDate)n.due=s._qiDate;
-        ps([n,...s.p]);s.an="";s.nk="";s._qiOpen=false;s._qiDate=null;
-      }},
-      focusEnd:true
-    }));
-    qi.append(qiInput);
-    // Footer: date button left, Annuler/Ajouter right
-    const qiFoot=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",padding:"8px 16px",borderTop:"1px solid var(--border)"}});
-    // Date button with SVG icon
-    const dateBtn=h("button",{style:{display:"inline-flex",alignItems:"center",gap:"5px",padding:"4px 10px",borderRadius:"6px",border:"1px solid var(--border)",fontSize:"11px",color:s._qiDate?"var(--accent)":"var(--sec)",cursor:"pointer",background:"transparent",fontFamily:"inherit",position:"relative"}});
-    dateBtn.append(mkSvg("calendar","13"),document.createTextNode(s._qiDate?shortDt(s._qiDate):"Date"));
-    // Hidden date input
-    const dInput=h("input",{type:"date",style:{position:"absolute",opacity:"0",width:"0",height:"0",top:"0",left:"0"},value:s._qiDate||""});
-    dInput.setAttribute("min",new Date().toISOString().slice(0,10));
-    dInput.addEventListener("change",e=>{s._qiDate=e.target.value||null;R();});
-    dateBtn.append(dInput);
-    dateBtn.addEventListener("click",e=>{e.stopPropagation();dInput.showPicker?.();dInput.click();});
-    qiFoot.append(dateBtn);
-    // Spacer
-    qiFoot.append(h("div",{style:{flex:"1"}}));
-    // Buttons
-    qiFoot.append(
-      h("button",{style:{padding:"6px 14px",borderRadius:"6px",border:"1px solid var(--border)",background:"var(--card)",color:"var(--text)",fontSize:"12px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{s.an="";s._qiOpen=false;s._qiDate=null;R();}},"Annuler"),
-      h("button",{style:{padding:"6px 14px",borderRadius:"6px",border:"none",background:s.an.trim()?"var(--accent)":"var(--muted)",color:"#fff",fontSize:"12px",fontWeight:"600",cursor:s.an.trim()?"pointer":"default",fontFamily:"inherit",opacity:s.an.trim()?"1":".5"},onClick:()=>{if(s.an.trim()){
-        const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",tasks:[],note:""};
-        if(s._qiDate)n.due=s._qiDate;
-        ps([n,...s.p]);s.an="";s.nk="";s._qiOpen=false;s._qiDate=null;
-      }}},"Ajouter")
-    );
-    qi.append(qiFoot);
+    qi.append(mkAddForm({fontSize:"14px",padding:"12px 16px",btnPad:"6px 14px",btnFont:"12px",onDone:()=>{s._qiOpen=false;s._qiDate=null;R();}}));
   }
   w.append(qi);
 
@@ -1792,53 +1805,8 @@ function R(){
       sheet.append(h("div",{style:{width:"36px",height:"4px",borderRadius:"2px",background:"var(--border)",margin:"0 auto 16px"}}));
       // Title
       sheet.append(h("div",{style:{fontSize:"15px",fontWeight:"600",color:"var(--text)",marginBottom:"12px"}},"Nouvelle tâche"));
-      // Input
-      let sheetDate=null;
-      const addWrap=mentionField({
-        value:"",
-        placeholder:"Nom de la tâche…",
-        style:{fontSize:"16px",padding:"12px",border:"1.5px solid var(--border)",borderRadius:"8px",background:"var(--card)",width:"100%"},
-        onInput:v=>{s.an=v;},
-        onEnter:()=>{
-          if(s.an.trim()){
-            const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",tasks:[],note:""};
-            if(sheetDate)n.due=sheetDate;
-            ps([n,...s.p]);s.an="";ov.remove();
-          }
-        },
-        focusEnd:true
-      });
-      sheet.append(addWrap);
-      // Footer: date left, buttons right
-      const sheetFoot=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginTop:"12px"}});
-      // Date button
-      const sheetDateBtn=h("button",{style:{display:"inline-flex",alignItems:"center",gap:"5px",padding:"8px 12px",borderRadius:"8px",border:"1px solid var(--border)",fontSize:"13px",color:"var(--sec)",cursor:"pointer",background:"transparent",fontFamily:"inherit",position:"relative"}});
-      const sdLabel=document.createTextNode("Date");
-      sheetDateBtn.append(mkSvg("calendar","14"),sdLabel);
-      const sdInput=h("input",{type:"date",style:{position:"absolute",opacity:"0",width:"0",height:"0"},value:""});
-      sdInput.setAttribute("min",new Date().toISOString().slice(0,10));
-      sdInput.addEventListener("change",e=>{
-        sheetDate=e.target.value||null;
-        sdLabel.textContent=sheetDate?shortDt(sheetDate):"Date";
-        sheetDateBtn.style.color=sheetDate?"var(--accent)":"var(--sec)";
-      });
-      sheetDateBtn.append(sdInput);
-      sheetDateBtn.addEventListener("click",e=>{e.stopPropagation();sdInput.showPicker?.();sdInput.click();});
-      sheetFoot.append(sheetDateBtn);
-      // Spacer
-      sheetFoot.append(h("div",{style:{flex:"1"}}));
-      // Buttons
-      sheetFoot.append(
-        h("button",{style:{padding:"10px 18px",borderRadius:"8px",border:"1px solid var(--border)",background:"var(--card)",color:"var(--text)",fontSize:"14px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{s.an="";ov.remove();}},"Annuler"),
-        h("button",{style:{padding:"10px 18px",borderRadius:"8px",border:"none",background:"var(--accent)",color:"#fff",fontSize:"14px",fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{
-          if(s.an.trim()){
-            const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",tasks:[],note:""};
-            if(sheetDate)n.due=sheetDate;
-            ps([n,...s.p]);s.an="";ov.remove();
-          }
-        }},"Ajouter")
-      );
-      sheet.append(sheetFoot);
+      // Shared form
+      sheet.append(mkAddForm({fontSize:"16px",padding:"12px",btnPad:"10px 18px",btnFont:"14px",onDone:()=>{ov.remove();}}));
       ov.append(sheet);
       document.getElementById("app").append(ov);
       // Auto-focus after render
