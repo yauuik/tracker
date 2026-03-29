@@ -334,7 +334,7 @@ const SETTINGS_KEY="taskr-settings";
 function loadSettings(){try{return JSON.parse(localStorage.getItem(SETTINGS_KEY))||{};}catch{return {};}}
 function saveSettings(v){try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(v));}catch{}}
 let settings=loadSettings();
-let s={p:[],ok:false,sy:"loading",ed:null,exp:false,keys:false,sett:false,cm:null,cf:null,nk:"",an:"",sel:new Set(),doneOpen:false,sh:false,noteEdit:false,_dateSort:settings._dateSort||null,calView:false};
+let s={p:[],ok:false,sy:"loading",ed:null,exp:false,keys:false,sett:false,cm:null,cf:null,nk:"",an:"",sel:new Set(),doneOpen:false,sh:false,noteEdit:false,_dateSort:settings._dateSort||null,calView:settings.calView||false};
 let svT=null;
 const syncLogs=[];
 function slog(type,msg){
@@ -974,7 +974,7 @@ function toast(msg,undoFn,duration){
 
 function onK(e){
   const ii=["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable;
-  if(e.key==="Escape"){if(s.cm)xcfm();else if(s.search){s.search=false;s.sq="";}else if(s._editTask){s._editTask=null;}else if(s.qed){s.qed=null;}else if(s.ed){s.ed=null;s.noteEdit=false;s._editTask=null;}else if(s.exp){s.exp=false;}else if(s.keys){s.keys=false;}else if(s.sett){s.sett=false;}else if(s.calc){s.calc=false;}else if(s.calView){s.calView=false;}else if(s.sel.size)s.sel.clear();e.preventDefault();R();return;}
+  if(e.key==="Escape"){if(s.cm)xcfm();else if(s.search){s.search=false;s.sq="";}else if(s._editTask){s._editTask=null;}else if(s.qed){s.qed=null;}else if(s.ed){s.ed=null;s.noteEdit=false;s._editTask=null;}else if(s.exp){s.exp=false;}else if(s.keys){s.keys=false;}else if(s.sett){s.sett=false;}else if(s.calc){s.calc=false;}else if(s.calView){s.calView=false;settings.calView=false;saveSettings(settings);}else if(s.sel.size)s.sel.clear();e.preventDefault();R();return;}
   if(e.key==="Enter"){if(s.cm){e.preventDefault();s.cf?.();xcfm();return;}if(s.keys){e.preventDefault();s.keys=false;R();return;}if(s.ed&&!ii){e.preventDefault();s.ed=null;R();return;}}
   if(!ii&&!s.ed&&!s.exp&&!s.keys){
     if(e.key==="n"){e.preventDefault();document.querySelector(".quick .ce-field")?.focus();return;}
@@ -1917,9 +1917,9 @@ function R(){
   const sortRow=h("div",{style:{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:"8px",gap:"4px"}});
   
   // View toggle: list / calendar
-  const viewList=h("button",{style:{background:!s.calView?"var(--hover)":"none",border:"none",cursor:"pointer",padding:"3px 8px",fontSize:"11px",fontWeight:"600",color:!s.calView?"var(--accent)":"var(--muted)",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"4px",borderRadius:"4px",transition:"all .15s"},onClick:()=>{if(s.calView){s.calView=false;R();}}});
+  const viewList=h("button",{style:{background:!s.calView?"var(--hover)":"none",border:"none",cursor:"pointer",padding:"3px 8px",fontSize:"11px",fontWeight:"600",color:!s.calView?"var(--accent)":"var(--muted)",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"4px",borderRadius:"4px",transition:"all .15s"},onClick:()=>{if(s.calView){s.calView=false;settings.calView=false;saveSettings(settings);R();}}});
   viewList.append(mkSvg("sort","12"),"Liste");
-  const viewCal=h("button",{style:{background:s.calView?"var(--hover)":"none",border:"none",cursor:"pointer",padding:"3px 8px",fontSize:"11px",fontWeight:"600",color:s.calView?"var(--accent)":"var(--muted)",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"4px",borderRadius:"4px",transition:"all .15s"},onClick:()=>{if(!s.calView){s.calView=true;R();}}});
+  const viewCal=h("button",{style:{background:s.calView?"var(--hover)":"none",border:"none",cursor:"pointer",padding:"3px 8px",fontSize:"11px",fontWeight:"600",color:s.calView?"var(--accent)":"var(--muted)",fontFamily:"inherit",display:"inline-flex",alignItems:"center",gap:"4px",borderRadius:"4px",transition:"all .15s"},onClick:()=>{if(!s.calView){s.calView=true;settings.calView=true;saveSettings(settings);R();}}});
   viewCal.append(mkSvg("calendar","12"),"Semaine");
   sortRow.append(viewList,viewCal);
   
