@@ -1144,20 +1144,21 @@ function mkRow(p){
 
   // ═══ EXPANDED STATE ═══
   if(isOpen){
-    const c=h("div",{className:"crd crd-open",style:{background:"transparent",borderTop:"1px solid var(--border)",borderBottom:"1px solid var(--border)",paddingTop:"12px",paddingBottom:"12px",marginTop:"4px",marginBottom:"4px"}});
+    const c=h("div",{className:"crd crd-open",style:{background:"var(--card)",border:"1.5px solid var(--border)",borderRadius:"12px",padding:"16px 18px",marginTop:"4px",marginBottom:"4px",boxShadow:"0 2px 12px rgba(0,0,0,.06)"}});
     c.oncontextmenu=e=>{e.preventDefault();s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);R();};
 
-    // Same top row as collapsed — name is editable input with @mention
-    const top=h("div",{className:"crd-top"});
+    // Name input — large, clean
     const nameWrap=mentionField({
       value:p.name,
-      style:{fontSize:"15px",fontWeight:"500",background:"var(--card)",padding:"8px 12px",borderRadius:"8px",border:"1.5px solid var(--border)"},
+      style:{fontSize:"16px",fontWeight:"600",background:"transparent",padding:"0 0 12px"},
       onInput:v=>up(p.id,{name:capFirst(v)},true),
       onEnter:()=>{s.ed=null;s.noteEdit=false;R();},
       focusEnd:true
     });
-    top.append(nameWrap);
-    const meta=h("div",{className:"meta"});
+    c.append(nameWrap);
+
+    // Meta row
+    const meta=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",paddingBottom:"12px",borderBottom:"1px solid var(--border)",fontSize:"11px",color:"var(--sec)"}});
     if(ts.length){
       const pg=h("div",{className:"prog"});
       pg.append(h("div",{className:"prog-f",style:{width:(dc/ts.length*100)+"%",background:dc===ts.length?"var(--green)":"var(--amber)"}}));
@@ -1166,12 +1167,12 @@ function mkRow(p){
     if(isDone&&p.doneAt)meta.append(h("span",{style:{color:"var(--green)",fontSize:"10px",fontFamily:"monospace"}},"✓ "+shortDt(p.doneAt)));
     const db3=dateBadge(p.due);
     if(db3&&!isDone)meta.append(db3);
-    top.append(meta);
-    c.append(top);
+    if(meta.childNodes.length)c.append(meta);
 
-    // Same subtasks as collapsed
+    // Subtasks section
     if(ts.length){
-      const itd=h("div",{className:"itasks"});
+      c.append(h("div",{style:{fontSize:"10px",fontWeight:"700",color:"var(--muted)",textTransform:"uppercase",letterSpacing:".06em",padding:"12px 0 4px"}},"Sous-tâches"));
+      const itd=h("div",{className:"itasks",style:{marginLeft:"0",borderLeft:"2px solid var(--border)",paddingLeft:"12px"}});
       ts.forEach((t,i)=>{
         const st=tSt(t);
         const {urgent}=parseTask(t.text);
@@ -1204,7 +1205,7 @@ function mkRow(p){
     }
 
     // ─── Edit panel below ───
-    const panel=h("div",{style:{marginTop:"8px",paddingTop:"8px",borderTop:"1px solid var(--border)",position:"relative",zIndex:"50",overflow:"visible"}});
+    const panel=h("div",{style:{marginTop:"12px",paddingTop:"12px",borderTop:"1px solid var(--border)",position:"relative",zIndex:"50",overflow:"visible"}});
 
     // Date picker
     const dateRow=h("div",{style:{display:"flex",alignItems:"center",gap:"10px",marginBottom:"12px",padding:"10px 12px",background:"var(--hover)",borderRadius:"8px"}});
