@@ -10,6 +10,8 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='10' width='80' height='80' rx='16' fill='none' stroke='%23FDAB3D' stroke-width='10'/><line x1='32' y1='50' x2='68' y2='50' stroke='%23FDAB3D' stroke-width='8' stroke-linecap='round'/></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://db.onlinewebfonts.com/c/6d2ac8672f2eb25e2d0f0b52465f00f8?family=IBM+3270" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
@@ -270,8 +272,19 @@ body{font-family:'Figtree',system-ui,sans-serif;background:var(--bg);color:var(-
 <body>
 <div id="app"></div>
 <script>
-const BIN_ID="69b32b9ab7ec241ddc634928",AK="$2a$10$c6o3RYJkkxNpy7r.NY3DW.bz4LyKK5Pwz.3ALRn2LB7B9TB85jKiO";
-const BU="https://api.jsonbin.io/v3/b/"+BIN_ID,HD={"Content-Type":"application/json","X-Master-Key":AK};
+// ─── Firebase Config ───
+const firebaseConfig={
+  apiKey:"AIzaSyDttw8kTEaKIbANmHaCosao7vrVPHBdZ2U",
+  authDomain:"taskr-1b2bd.firebaseapp.com",
+  databaseURL:"https://taskr-1b2bd-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"taskr-1b2bd",
+  storageBucket:"taskr-1b2bd.firebasestorage.app",
+  messagingSenderId:"144985629094",
+  appId:"1:144985629094:web:78fe23991397ce1bcd2f67"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+const dbRef=db.ref("taskr");
 const DF=[
   {id:"p1",name:"Template Jira — Quiz Ciblage v2",status:"In Progress",tasks:[{text:"Ajouter les questions MC labels",st:"todo"},{text:"Questions recurring journeys",st:"todo"},{text:"Valider 5 nouvelles questions v2",st:"done"}],notes:[{date:"2025-12",text:"5 questions validées (v2)"},{date:"2025-11",text:"Structure 2 parties"}]},
   {id:"p2",name:"E-Certificat Auto — Merge mensuel",status:"In Progress",tasks:[{text:"Prochaine vague merge NRB",st:"todo"}],notes:[{date:"2025-12",text:"Script merge Python opérationnel"}]},
@@ -698,14 +711,8 @@ function getNote(p){
   return "";
 }
 
-// ─── Sync ───
+// ─── Sync (Firebase Realtime Database) ───
 const LS_KEY="taskr-data";
-async function lb(){
-  const r=await fetch(BU+"/latest",{headers:HD});
-  if(!r.ok)throw 0;
-  const rec=(await r.json()).record||{};
-  return{projects:rec.projects||[],ts:rec._ts||0,prefs:rec._prefs||{}};
-}
 async function sb(p){
   const prefs={
     dateSort:s._dateSort||null,
@@ -714,23 +721,24 @@ async function sb(p){
     calcPauseEnd:settings._calcPauseEnd||null,
     calcDep:settings._calcDep||null
   };
-  const r=await fetch(BU,{method:"PUT",headers:HD,body:JSON.stringify({projects:p,_ts:Date.now(),_prefs:prefs})});
-  if(!r.ok)throw 0;
+  await dbRef.set({projects:p,_ts:Date.now(),_prefs:prefs});
 }
 function lsSave(){try{localStorage.setItem(LS_KEY,JSON.stringify(s.p));localStorage.setItem(LS_KEY+"_ts",Date.now()+"");}catch{}}
 function lsLoad(){try{const d=localStorage.getItem(LS_KEY);return d?JSON.parse(d):null;}catch{return null;}}
-function lsTs(){try{return parseInt(localStorage.getItem(LS_KEY+"_ts"))||0;}catch{return 0;}}
 
 // Debounced cloud save (800ms)
-let cloudLoaded=false;// true only after successful lb() at init
+let cloudLoaded=false;
+let saving=false;
 function save(){
   lsSave();
   if(!cloudLoaded){slog("⚠","Save local only (cloud pas chargé)");return;}
   s.sy="saving";
   if(svT)clearTimeout(svT);
   svT=setTimeout(async()=>{
+    saving=true;
     try{await sb(s.p);s.sy="synced";slog("☁","Sauvegardé ("+s.p.length+" projets)");notifyTabs();}
-    catch{s.sy="error";slog("✕","Erreur sauvegarde");}
+    catch(e){s.sy="error";slog("✕","Erreur: "+(e.message||e));}
+    saving=false;
     if(!s.ed){qR();}
     else{
       const dot=document.querySelector("[data-sync-dot]");
@@ -743,13 +751,9 @@ function save(){
 let rAF=null;
 function qR(){if(!rAF)rAF=requestAnimationFrame(()=>{rAF=null;R();});}
 
-// ─── Cross-device & cross-tab sync ───
+// ─── Cross-tab sync ───
 const bc=typeof BroadcastChannel!=="undefined"?new BroadcastChannel("taskr-sync"):null;
-
-// Notify other tabs after save
 function notifyTabs(){if(bc)bc.postMessage("updated");}
-
-// Listen for other tab updates (instant, same device)
 if(bc)bc.onmessage=()=>{
   const local=lsLoad();
   if(local&&JSON.stringify(local)!==JSON.stringify(s.p)){
@@ -757,32 +761,33 @@ if(bc)bc.onmessage=()=>{
   }
 };
 
-// Polling — check jsonbin every 30s (skip if editing or just saved)
-let lastPoll=0;
-setInterval(async()=>{
-  if(s.ed||s.sy==="saving")return;
-  try{
-    const remote=await lb();
-    cloudLoaded=true;
-    if(remote.ts>lsTs()&&JSON.stringify(remote.projects)!==JSON.stringify(s.p)){
-      s.p=remote.projects;if(remote.prefs.dateSort!==undefined)s._dateSort=remote.prefs.dateSort;if(remote.prefs.calcArr)settings._calcArr=remote.prefs.calcArr;if(remote.prefs.calcPauseStart)settings._calcPauseStart=remote.prefs.calcPauseStart;if(remote.prefs.calcPauseEnd)settings._calcPauseEnd=remote.prefs.calcPauseEnd;if(remote.prefs.calcDep!==undefined)settings._calcDep=remote.prefs.calcDep;saveSettings(settings);lsSave();slog("↓","Sync cloud");qR();
-    }
-  }catch{}
-  lastPoll=Date.now();
-},30000);
-
-// Visibility — sync immediately when tab becomes visible
-document.addEventListener("visibilitychange",async()=>{
-  if(document.hidden)return;
-  if(Date.now()-lastPoll<2000)return;
-  try{
-    const remote=await lb();
-    if(remote.ts>lsTs()&&JSON.stringify(remote.projects)!==JSON.stringify(s.p)){
-      s.p=remote.projects;if(remote.prefs.dateSort!==undefined)s._dateSort=remote.prefs.dateSort;if(remote.prefs.calcArr)settings._calcArr=remote.prefs.calcArr;if(remote.prefs.calcPauseStart)settings._calcPauseStart=remote.prefs.calcPauseStart;if(remote.prefs.calcPauseEnd)settings._calcPauseEnd=remote.prefs.calcPauseEnd;if(remote.prefs.calcDep!==undefined)settings._calcDep=remote.prefs.calcDep;saveSettings(settings);lsSave();slog("↓","Sync retour");qR();
-    }
-  }catch{}
-  lastPoll=Date.now();
+// ─── Firebase Realtime listener (replaces polling!) ───
+function applyPrefs(prefs){
+  if(!prefs)return;
+  if(prefs.dateSort!==undefined)s._dateSort=prefs.dateSort;
+  if(prefs.calcArr)settings._calcArr=prefs.calcArr;
+  if(prefs.calcPauseStart)settings._calcPauseStart=prefs.calcPauseStart;
+  if(prefs.calcPauseEnd)settings._calcPauseEnd=prefs.calcPauseEnd;
+  if(prefs.calcDep!==undefined)settings._calcDep=prefs.calcDep;
+  saveSettings(settings);
+}
+dbRef.on("value",snap=>{
+  if(saving)return;
+  const data=snap.val();
+  if(!data)return;
+  const remote=data.projects||[];
+  if(JSON.stringify(remote)!==JSON.stringify(s.p)){
+    s.p=remote;
+    applyPrefs(data._prefs);
+    lsSave();
+    slog("↓","Sync temps réel");
+    if(!s.ed)qR();
+  } else if(data._prefs){
+    applyPrefs(data._prefs);
+  }
+  if(!cloudLoaded){cloudLoaded=true;s.sy="synced";}
 });
+
 // ps: replace all projects + save + render
 function ps(p){s.p=p;slog("↑","Sauvegarde…");save();qR();}
 
@@ -796,23 +801,21 @@ function up(id,patch,skipRender){
 (async()=>{
   try{
     slog("↓","Chargement…");
-    const d=await lb();
-    s.p=d.projects.length?d.projects:DF;
-    if(d.prefs.dateSort!==undefined)s._dateSort=d.prefs.dateSort;
-    if(d.prefs.calcArr)settings._calcArr=d.prefs.calcArr;
-    if(d.prefs.calcPauseStart)settings._calcPauseStart=d.prefs.calcPauseStart;
-    if(d.prefs.calcPauseEnd)settings._calcPauseEnd=d.prefs.calcPauseEnd;
-    if(d.prefs.calcDep!==undefined)settings._calcDep=d.prefs.calcDep;
-    saveSettings(settings);
-    if(!d.projects.length)await sb(DF);
+    const snap=await dbRef.once("value");
+    const data=snap.val();
+    if(data&&data.projects&&data.projects.length){
+      s.p=data.projects;
+      applyPrefs(data._prefs);
+    } else {
+      s.p=DF;
+      await sb(DF);
+    }
     lsSave();cloudLoaded=true;
     s.sy="synced";slog("☁","Chargé ("+s.p.length+" projets)");
   }catch(err){
-    // Fallback: try localStorage
     const ls=lsLoad();
     if(ls&&ls.length){s.p=ls;s.sy="error";slog("⚠","Offline — localStorage ("+ls.length+" projets)");}
     else{s.p=DF;s.sy="error";slog("✕","Erreur chargement");}
-    // Debug: show error
     setTimeout(()=>toast("Sync erreur: "+(err?.message||err||"unknown"),null,8000),500);
   }
   s.ok=true;R();document.addEventListener("keydown",onK);
@@ -1731,7 +1734,7 @@ function R(){
   syncWrap.addEventListener("mouseleave",()=>{tip.style.opacity="0";tip.style.pointerEvents="none";});
   // Click → open jsonbin dashboard
   syncDot.addEventListener("click",e=>{e.stopPropagation();
-    if(e.altKey||e.ctrlKey||e.metaKey){window.open("https://jsonbin.io/app/bins","_blank");return;}
+    if(e.altKey||e.ctrlKey||e.metaKey){window.open("https://console.firebase.google.com/project/taskr-1b2bd/database/taskr-1b2bd-default-rtdb/data","_blank");return;}
     slog("↑","Sync manuel…");s.sy="saving";R();
     (async()=>{try{lsSave();await sb(s.p);s.sy="synced";slog("☁","Sync OK");}catch{s.sy="error";slog("✕","Erreur sync");}R();})();
   });
