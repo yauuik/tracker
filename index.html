@@ -1655,23 +1655,6 @@ function mkRow(p){
   if(db&&!isDone)meta.append(db);
   top.append(meta);c.append(top);
 
-  // Subtask toggle line (separate from card click)
-  if(ts.length&&!isOpen){
-    const stExp=s.stOpen.has(p.id);
-    const togLine=h("div",{style:{display:"flex",alignItems:"center",gap:"6px",padding:"2px 0 2px 44px",cursor:"pointer",fontSize:"11px",color:"var(--muted)",userSelect:"none"}});
-    const arrow=h("span",{style:{display:"inline-block",transition:"transform .2s",transform:stExp?"rotate(90deg)":"rotate(0)",fontSize:"8px"}});
-    arrow.textContent="▶";
-    togLine.append(arrow,h("span",{},ts.length+" sous-tâche"+(ts.length>1?"s":"")));
-    togLine.addEventListener("click",e=>{
-      e.stopPropagation();
-      if(s.stOpen.has(p.id))s.stOpen.delete(p.id);else s.stOpen.add(p.id);
-      R();
-    });
-    togLine.addEventListener("mouseenter",()=>{togLine.style.color="var(--sec)";});
-    togLine.addEventListener("mouseleave",()=>{togLine.style.color="var(--muted)";});
-    c.append(togLine);
-  }
-
   if(ts.length&&s.stOpen.has(p.id)&&!isOpen){
     const itd=h("div",{className:"itasks"});
     // Sort subtasks by date when date sort is active
@@ -1718,6 +1701,27 @@ function mkRow(p){
     const delBtn=h("button",{className:"rm",style:{padding:"4px 8px",flexShrink:"0",alignSelf:"flex-start",marginTop:"10px",display:"flex",alignItems:"center"},onClick:e=>{e.stopPropagation();const backup=[...s.p];const name=p.name;ps(s.p.filter(x=>x.id!==p.id));toast("\""+name.replace(/@[\w\u00C0-\u024F]+\s*/g,"").replace(/!!/g,"").trim()+"\" supprimé",()=>{ps(backup);});}});
     delBtn.append(mkSvg("trash","16",{color:"var(--muted)"}));
     row.append(c,delBtn);
+  }
+  // Subtask toggle — outside card, wrapped with row
+  if(ts.length&&!isOpen){
+    const wrap=h("div",{});
+    wrap.setAttribute("data-id",p.id);
+    row.removeAttribute("data-id");
+    wrap.append(row);
+    const stExp=s.stOpen.has(p.id);
+    const togLine=h("div",{style:{display:"flex",alignItems:"center",gap:"6px",padding:"0 0 4px 44px",cursor:"pointer",fontSize:"11px",color:"var(--muted)",userSelect:"none"}});
+    const arrow=h("span",{style:{display:"inline-block",transition:"transform .2s",transform:stExp?"rotate(90deg)":"rotate(0)",fontSize:"8px"}});
+    arrow.textContent="▶";
+    togLine.append(arrow,h("span",{},ts.length+" sous-tâche"+(ts.length>1?"s":"")));
+    togLine.addEventListener("click",e=>{
+      e.stopPropagation();
+      if(s.stOpen.has(p.id))s.stOpen.delete(p.id);else s.stOpen.add(p.id);
+      R();
+    });
+    togLine.addEventListener("mouseenter",()=>{togLine.style.color="var(--sec)";});
+    togLine.addEventListener("mouseleave",()=>{togLine.style.color="var(--muted)";});
+    wrap.append(togLine);
+    return wrap;
   }
   return row;
 }
