@@ -715,7 +715,12 @@ function mentionField(opts){
   wrap._getTags=()=>tags;
   return wrap;
 }
-function tSt(t){return t.st||(t.done?"done":"todo");}
+function tSt(t){
+  const st=t.status||t.st;
+  if(st==="Done"||st==="done")return "done";
+  if(st==="In Progress"||st==="progress")return "progress";
+  return "todo";
+}
 // Backward compat: convert old notes array to single string
 function getNote(p){
   if(typeof p.note==="string")return p.note;
@@ -902,8 +907,8 @@ function togP(id,reverse){
   if(lastTogP[id]&&(now-lastTogP[id].t)<UNDO_MS){
     const prev=lastTogP[id].st;
     const patch={status:prev};
-    if(prev==="Done"){patch.doneAt=td();patch.tasks=(p.tasks||[]).map(t=>({...t,st:"done",doneAt:t.doneAt||td()}));}
-    else{patch.doneAt=null;patch.tasks=(p.tasks||[]).map(t=>{const o={...t,st:"todo"};delete o.doneAt;return o;});}
+    if(prev==="Done"){patch.doneAt=td();patch.children=(p.children||[]).map(t=>({...t,status:"Done",doneAt:t.doneAt||td()}));}
+    else{patch.doneAt=null;patch.children=(p.children||[]).map(t=>{const o={...t,status:"To Do"};delete o.doneAt;return o;});}
     delete lastTogP[id];
     up(id,patch);return;
   }
@@ -912,8 +917,8 @@ function togP(id,reverse){
   setTimeout(()=>{if(lastTogP[id]&&(Date.now()-lastTogP[id].t)>=UNDO_MS)delete lastTogP[id];},UNDO_MS+50);
   const patch={status:next};
   const nowD=td();
-  if(next==="Done"){patch.doneAt=nowD;patch.tasks=(p.tasks||[]).map(t=>({...t,st:"done",doneAt:t.doneAt||nowD}));}
-  if(next==="To Do"){delete patch.doneAt;patch.tasks=(p.tasks||[]).map(t=>{const o={...t,st:"todo"};delete o.doneAt;return o;});}
+  if(next==="Done"){patch.doneAt=nowD;patch.children=(p.children||[]).map(t=>({...t,status:"Done",doneAt:t.doneAt||nowD}));}
+  if(next==="To Do"){delete patch.doneAt;patch.children=(p.children||[]).map(t=>{const o={...t,status:"To Do"};delete o.doneAt;return o;});}
   // Animate before moving to Done
   if(next==="Done"){
     haptic();playCheck();
@@ -932,33 +937,34 @@ function togP(id,reverse){
 
 function togT(pid,i,reverse){
   const p=s.p.find(x=>x.id===pid);if(!p)return;
-  const t=(p.tasks||[])[i];if(!t)return;
+  const t=(p.children||[])[i];if(!t)return;
   const now=Date.now();
   const tk=pid+"-"+i;
+  const STATUS_MAP={"done":"Done","progress":"In Progress","todo":"To Do"};
   // Quick re-click → undo
   if(lastTogT[tk]&&(now-lastTogT[tk].t)<UNDO_MS){
-    const ts=[...(p.tasks||[])];
+    const ts=[...(p.children||[])];
     const prev=lastTogT[tk].st;
-    const nt={...t,st:prev};
+    const nt={...t,status:STATUS_MAP[prev]||"To Do"};
     if(prev==="done")nt.doneAt=td();else delete nt.doneAt;
     ts[i]=nt;
     delete lastTogT[tk];
-    up(pid,{tasks:ts});return;
+    up(pid,{children:ts});return;
   }
   lastTogT[tk]={t:now,st:tSt(t)};
   setTimeout(()=>{if(lastTogT[tk]&&(Date.now()-lastTogT[tk].t)>=UNDO_MS)delete lastTogT[tk];},UNDO_MS+50);
-  const ts=[...(p.tasks||[])];
+  const ts=[...(p.children||[])];
   const nst=reverse?(TPREV[tSt(t)]||"done"):(TNEXT[tSt(t)]||"todo");
-  const nt={...t,st:nst};
+  const nt={...t,status:STATUS_MAP[nst]||"To Do"};
   if(nst==="done") nt.doneAt=td();
   else delete nt.doneAt;
   ts[i]=nt;
-  const patch={tasks:ts};
+  const patch={children:ts};
   if(tSt(t)==="todo"&&p.status==="To Do") patch.status="In Progress";
   if(tSt(t)==="done"&&nst!=="done"&&p.status==="Done"){patch.status="In Progress";patch.doneAt=null;}
   up(pid,patch,true);
   const cur=s.p.find(x=>x.id===pid);
-  const allDone=cur&&cur.tasks&&cur.tasks.length&&cur.tasks.every(t2=>tSt(t2)==="done")&&cur.status!=="Done";
+  const allDone=cur&&cur.children&&cur.children.length&&cur.children.every(t2=>tSt(t2)==="done")&&cur.status!=="Done";
   if(nst==="done"){
     haptic();playCheck();
     // Animate subtask strikethrough then render
@@ -983,11 +989,11 @@ function togT(pid,i,reverse){
 
 function qadd(){
   if(!s.an.trim())return;
-  const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",tasks:[],note:""};
+  const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",children:[],note:""};
   s._newId=n.id;ps([n,...s.p]);
   s.an="";s.nk="";
 }
-function atk(){if(!s.nk.trim()||!s.ed)return;const p=s.p.find(x=>x.id===s.ed);up(s.ed,{tasks:[...(p.tasks||[]),{text:capFirst(s.nk.trim()),st:"todo",date:td()}]});s.nk="";s._focusTaskInput=true;}
+function atk(){if(!s.nk.trim()||!s.ed)return;const p=s.p.find(x=>x.id===s.ed);up(s.ed,{children:[...(p.children||[]),{id:gid(),name:capFirst(s.nk.trim()),status:"To Do",note:"",children:[]}]});s.nk="";s._focusTaskInput=true;}
 function cfm(m,f){s.cm=m;s.cf=f;R();}
 function xcfm(){s.cm=null;s.cf=null;R();}
 
@@ -1052,7 +1058,7 @@ function bxsTxt(st){
 function bxsCls(st){return st==="done"?"bx-s dn":st==="progress"?"bx-s ip":"bx-s";}
 
 function mkRow(p){
-  const ts=p.tasks||[];
+  const ts=p.children||[];
   const dc=ts.filter(t=>tSt(t)==="done").length;
   const pSt=p.status==="Done"?"done":p.status==="In Progress"?"progress":"todo";
   const isDone=p.status==="Done";
@@ -1201,7 +1207,7 @@ function mkRow(p){
       sortedTs2.forEach((t)=>{
         const i=ts.indexOf(t);
         const st=tSt(t);
-        const {urgent}=parseTask(t.text);
+        const {urgent}=parseTask(t.name);
         const it=h("div",{className:"it"+(urgent?" urgent":"")});
         it.append(
           h("div",{className:bxsCls(st),onClick:e=>{e.stopPropagation();togT(p.id,i,e.altKey);}},bxsTxt(st))
@@ -1209,15 +1215,15 @@ function mkRow(p){
         // Editable subtask text
         if(s._editTask===p.id+"-"+i){
           const tiWrap=mentionField({
-            value:t.text,
+            value:t.name,
             style:{fontSize:"13px",background:"transparent",padding:"2px 0",flex:"1"},
-            onInput:v=>{const x=[...ts];x[i]={...x[i],text:capFirst(v)};up(p.id,{tasks:x},true);},
+            onInput:v=>{const x=[...ts];x[i]={...x[i],name:capFirst(v)};up(p.id,{children:x},true);},
             onEnter:()=>{s._editTask=null;R();},
             focusEnd:true
           });
           it.append(tiWrap);
         } else {
-          const tspan=richTask(t.text,{flex:"1",cursor:"text"});
+          const tspan=richTask(t.name,{flex:"1",cursor:"text"});
           if(st==="done")tspan.classList.add("x");
           tspan.addEventListener("click",e=>{e.stopPropagation();s._editTask=p.id+"-"+i;R();});
           it.append(tspan);
@@ -1238,7 +1244,7 @@ function mkRow(p){
           tDateIn.addEventListener("change",()=>{
             const x=[...ts];x[i]={...x[i],due:tDateIn.value||undefined};
             if(!tDateIn.value)delete x[i].due;
-            up(p.id,{tasks:x});
+            up(p.id,{children:x});
           });
           tDateBtn.addEventListener("click",e=>{e.stopPropagation();tDateIn.showPicker?.();});
           tDateBtn.append(tDateIn);
@@ -1246,7 +1252,7 @@ function mkRow(p){
         }
         if(st==="done"&&t.doneAt)it.append(h("span",{style:{fontSize:"10px",color:"var(--muted)",fontFamily:"monospace",whiteSpace:"nowrap",paddingLeft:"6px"}},shortDt(t.doneAt)));
         // Delete button per task
-        const delT=h("button",{className:"rm",style:{padding:"4px 6px",flexShrink:"0",display:"flex",alignItems:"center",borderRadius:"4px",transition:"background .15s"},onClick:e=>{e.stopPropagation();const backup=[...ts];const x=[...ts];x.splice(i,1);up(p.id,{tasks:x});toast("Tâche supprimée",()=>{up(p.id,{tasks:backup});});}});
+        const delT=h("button",{className:"rm",style:{padding:"4px 6px",flexShrink:"0",display:"flex",alignItems:"center",borderRadius:"4px",transition:"background .15s"},onClick:e=>{e.stopPropagation();const backup=[...ts];const x=[...ts];x.splice(i,1);up(p.id,{children:x});toast("Tâche supprimée",()=>{up(p.id,{tasks:backup});});}});
         const tSvg=mkSvg("trash","16",{color:"var(--muted)",transition:"color .15s"});
         delT.append(tSvg);
         delT.addEventListener("mouseenter",()=>{tSvg.style.color="var(--red)";delT.style.background="rgba(226,68,92,.08)";});
@@ -1665,9 +1671,9 @@ function mkRow(p){
     sortedTs.forEach((t,i)=>{
       const origIdx=ts.indexOf(t);
       const st=tSt(t);
-      const {urgent}=parseTask(t.text);
+      const {urgent}=parseTask(t.name);
       const it=h("div",{className:"it"+(urgent?" urgent":"")});
-      const tspan2=richTask(t.text,{flex:"1"});
+      const tspan2=richTask(t.name,{flex:"1"});
       if(st==="done")tspan2.classList.add("x");
       if(s.sq)hlText(tspan2,s.sq);
       it.append(
@@ -1739,7 +1745,7 @@ function mkAddForm(opts){
     style:{fontSize:fs2,fontWeight:"500"},
     onInput:v=>{s.an=v;},
     onEnter:()=>{if(s.an.trim()){
-      const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",tasks:[],note:""};
+      const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",children:[],note:""};
       if(formDate)n.due=formDate;
       s._newId=n.id;ps([n,...s.p]);s.an="";s.nk="";
       if(opts.onDone)opts.onDone();
@@ -1766,7 +1772,7 @@ function mkAddForm(opts){
   foot.append(
     h("button",{style:{padding:bPad,borderRadius:"6px",border:"1px solid var(--border)",background:"var(--card)",color:"var(--text)",fontSize:bFs,fontWeight:"600",cursor:"pointer",fontFamily:"inherit"},onClick:()=>{s.an="";if(opts.onDone)opts.onDone();else R();}},"Annuler"),
     h("button",{style:{padding:bPad,borderRadius:"6px",border:"none",background:s.an.trim()?"var(--accent)":"var(--muted)",color:"#fff",fontSize:bFs,fontWeight:"600",cursor:s.an.trim()?"pointer":"default",fontFamily:"inherit",opacity:s.an.trim()?"1":".5"},onClick:()=>{if(s.an.trim()){
-      const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",tasks:[],note:""};
+      const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",children:[],note:""};
       if(formDate)n.due=formDate;
       s._newId=n.id;ps([n,...s.p]);s.an="";s.nk="";
       if(opts.onDone)opts.onDone();
@@ -1817,7 +1823,7 @@ function R(){
     if(p.note&&p.note.toLowerCase().includes(q))return true;
     if(p.due&&p.due.includes(q))return true;
     if(p.due&&shortDt(p.due).toLowerCase().includes(q))return true;
-    if(p.tasks&&p.tasks.some(t=>t.text&&t.text.toLowerCase().includes(q)))return true;
+    if(p.children&&p.children.some(t=>t.name&&t.name.toLowerCase().includes(q)))return true;
     return false;
   }
 
@@ -1967,7 +1973,7 @@ function R(){
           }
         });
         const cnt=sb2.querySelector("[data-search-count]");
-        if(cnt){const total=s.p.filter(p=>!p.hidden&&matchSearch(p)).length;cnt.textContent=total+" résultat"+(total!==1?"s":"");}
+        if(cnt){const total=s.p.filter(p=>!p.hidden&&matchSearch(p)).length;cnt.nameContent=total+" résultat"+(total!==1?"s":"");}
         // Show/hide Done section
         const dw=document.querySelector("[data-done-wrap]");
         if(dw)dw.style.display=q?"block":s.doneOpen?"block":"none";
@@ -2092,7 +2098,7 @@ function R(){
     // Week nav
     const calNav=h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"12px"}});
     const navPrev=h("button",{className:"icon-btn",style:{fontSize:"18px"},onClick:()=>{s._calWeekOffset--;R();}});navPrev.textContent="‹";
-    const navNext=h("button",{className:"icon-btn",style:{fontSize:"18px"},onClick:()=>{s._calWeekOffset++;R();}});navNext.textContent="›";
+    const navNext=h("button",{className:"icon-btn",style:{fontSize:"18px"},onClick:()=>{s._calWeekOffset++;R();}});navNext.nameContent="›";
     const navToday=h("button",{style:{background:"none",border:"1px solid var(--border)",borderRadius:"6px",cursor:"pointer",padding:"3px 10px",fontSize:"11px",fontWeight:"500",color:"var(--sec)",fontFamily:"inherit"},onClick:()=>{s._calWeekOffset=0;R();}});
     navToday.textContent="Aujourd'hui";
     const moisNoms=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
@@ -2109,8 +2115,8 @@ function R(){
     s.p.forEach(p=>{
       if(p.hidden||p.status==="Done")return;
       if(p.due)allTasks.push({name:p.name,due:p.due,status:p.status,id:p.id,type:"project"});
-      (p.tasks||[]).forEach((t,i)=>{
-        if(t.due&&tSt(t)!=="done")allTasks.push({name:t.text,due:t.due,status:tSt(t),id:p.id,idx:i,type:"subtask",parentName:p.name});
+      (p.children||[]).forEach((t,i)=>{
+        if(t.due&&tSt(t)!=="done")allTasks.push({name:t.name,due:t.due,status:tSt(t),id:p.id,idx:i,type:"subtask",parentName:p.name});
       });
     });
 
@@ -2287,8 +2293,8 @@ function rExp(){
       md+="## "+x+"\n\n";
       items.forEach(p=>{
         md+="### "+p.name+"\n";
-        if(p.tasks?.length)p.tasks.forEach(t=>{
-          md+="- ["+(tSt(t)==="done"?"x":tSt(t)==="progress"?"/":" ")+"] "+t.text+"\n";
+        if(p.children?.length)p.children.forEach(t=>{
+          md+="- ["+(tSt(t)==="done"?"x":tSt(t)==="progress"?"/":" ")+"] "+t.name+"\n";
         });
         const n=getNote(p);
         if(n)md+="\n"+n+"\n";
@@ -2321,15 +2327,16 @@ function rExp(){
       if(projM){
         flushProj();
         const existing=s.p.find(p=>p.name===projM[1].trim());
-        curProj={id:existing?.id||gid(),name:projM[1].trim(),status:curStatus||"To Do",tasks:[],note:"",doneAt:existing?.doneAt||null,hidden:false};
+        curProj={id:existing?.id||gid(),name:projM[1].trim(),status:curStatus||"To Do",children:[],note:"",doneAt:existing?.doneAt||null,hidden:false};
         continue;
       }
       const taskM=line.match(/^- \[([ x\/])\] (.+)/);
       if(taskM&&curProj){
         flushNote();
         const st=taskM[1]==="x"?"done":taskM[1]==="/"?"progress":"todo";
-        const existingT=(s.p.find(p=>p.name===curProj.name)?.tasks||[]).find(t=>t.text===taskM[2].trim());
-        curProj.tasks.push({text:taskM[2].trim(),st,date:existingT?.date||td(),doneAt:st==="done"?(existingT?.doneAt||td()):undefined});
+        const STATUS_IMP={"done":"Done","progress":"In Progress","todo":"To Do"};
+        const existingT=(s.p.find(p=>p.name===curProj.name)?.children||[]).find(t=>t.name===taskM[2].trim());
+        curProj.children.push({id:existingT?.id||gid(),name:taskM[2].trim(),status:STATUS_IMP[st]||"To Do",note:"",children:[],doneAt:st==="done"?(existingT?.doneAt||td()):undefined});
         continue;
       }
       if(curProj&&line.trim()===""&&!noteLines.length)continue;
