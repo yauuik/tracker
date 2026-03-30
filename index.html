@@ -1469,6 +1469,8 @@ function mkRow(p){
       if(noteVal.includes("<")&&noteVal.includes(">"))noteDiv.innerHTML=noteVal;
       else noteDiv.innerHTML=noteVal.replace(/\n/g,"<br>");
       requestAnimationFrame(()=>linkifyNote(noteDiv));
+      // Highlight search term in note
+      if(s.sq)requestAnimationFrame(()=>hlText(noteDiv,s.sq));
     }
     noteDiv.dataset.ph="Notes, liens, idées…";
     // Auto-linkify plain URLs in text nodes
