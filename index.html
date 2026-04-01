@@ -993,7 +993,7 @@ function toast(msg,undoFn,duration){
 
 function onK(e){
   const ii=["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable;
-  if(e.key==="Escape"){if(s.cm)xcfm();else if(s._qiOpen){s._qiOpen=false;s.an="";}else if(s.search){s.search=false;s.sq="";}else if(s._editTask){s._editTask=null;}else if(s.qed){s.qed=null;}else if(s.ed){s.ed=null;s.noteEdit=false;s._editTask=null;}else if(s.exp){s.exp=false;}else if(s.keys){s.keys=false;}else if(s.sett){s.sett=false;}else if(s.calc){s.calc=false;save();}else if(s.calView){s.calView=false;settings.calView=false;saveSettings(settings);}else if(s.sel.size)s.sel.clear();e.preventDefault();R();return;}
+  if(e.key==="Escape"){if(s.cm)xcfm();else if(s._qiOpen){s._qiOpen=false;s.an="";s._qiDate=null;}else if(s.search){s.search=false;s.sq="";}else if(s._editTask){s._editTask=null;}else if(s.qed){s.qed=null;}else if(s.ed){s.ed=null;s.noteEdit=false;s._editTask=null;}else if(s.exp){s.exp=false;}else if(s.keys){s.keys=false;}else if(s.sett){s.sett=false;}else if(s.calc){s.calc=false;save();}else if(s.calView){s.calView=false;settings.calView=false;saveSettings(settings);}else if(s.sel.size)s.sel.clear();e.preventDefault();R();return;}
   if(e.key==="Enter"){if(s.cm){e.preventDefault();s.cf?.();xcfm();return;}if(s.keys){e.preventDefault();s.keys=false;R();return;}if(s.ed&&!ii){e.preventDefault();s.ed=null;R();return;}}
   if(!ii&&!s.ed&&!s.exp&&!s.keys){
     if(e.key==="n"){e.preventDefault();s._qiOpen=true;R();requestAnimationFrame(()=>{document.querySelector(".quick .ce-field")?.focus();});return;}
@@ -1651,7 +1651,7 @@ function mkAddForm(opts){
   const fs2=opts.fontSize||"14px";const pd=opts.padding||"12px 16px";
   const bPad=opts.btnPad||"6px 14px";const bFs=opts.btnFont||"12px";
   const wrap=h("div");
-  let formDate=null;
+  let formDate=s._qiDate||null;
   const inputWrap=h("div",{style:{padding:pd.replace(/\s.*$/,"")+" "+pd.replace(/^.*\s/,"")}});
   inputWrap.append(mentionField({
     value:s.an,placeholder:"Nom de la tâche…",
@@ -1672,8 +1672,9 @@ function mkAddForm(opts){
   const dateBtn=h("button",{style:{display:"inline-flex",alignItems:"center",gap:"5px",padding:bPad,borderRadius:"6px",border:"1px solid var(--border)",fontSize:bFs,color:"var(--sec)",cursor:"pointer",background:"transparent",fontFamily:"inherit",position:"relative"}});
   const dateLbl=document.createTextNode("Date");
   dateBtn.append(mkSvg("calendar","13"),dateLbl);
-  const dateIn=h("input",{type:"date",style:{position:"absolute",opacity:"0",width:"0",height:"0"},value:""});
+  const dateIn=h("input",{type:"date",style:{position:"absolute",opacity:"0",width:"0",height:"0"},value:formDate||""});
   dateIn.setAttribute("min",localIso());
+  if(formDate){dateLbl.textContent=shortDt(formDate);dateBtn.style.color="var(--accent)";}
   dateIn.addEventListener("change",e=>{
     formDate=e.target.value||null;
     dateLbl.textContent=formDate?shortDt(formDate):"Date";
@@ -2026,7 +2027,7 @@ function R(){
     // Week nav
     const calNav=h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"12px"}});
     const navPrev=h("button",{className:"icon-btn",style:{fontSize:"18px"},onClick:()=>{s._calWeekOffset--;R();}});navPrev.textContent="‹";
-    const navNext=h("button",{className:"icon-btn",style:{fontSize:"18px"},onClick:()=>{s._calWeekOffset++;R();}});navNext.nameContent="›";
+    const navNext=h("button",{className:"icon-btn",style:{fontSize:"18px"},onClick:()=>{s._calWeekOffset++;R();}});navNext.textContent="›";
     const navToday=h("button",{style:{background:"none",border:"1px solid var(--border)",borderRadius:"6px",cursor:"pointer",padding:"3px 10px",fontSize:"11px",fontWeight:"500",color:"var(--sec)",fontFamily:"inherit"},onClick:()=>{s._calWeekOffset=0;R();}});
     navToday.textContent="Aujourd'hui";
     const moisNoms=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
@@ -2051,6 +2052,39 @@ function R(){
 
     const jourNoms=["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
     const todayStr=localIso(today);
+    const weekStart=localIso(startOfWeek);
+    const weekEndStr=localIso(endOfWeek);
+
+    // ── Overdue banner ──
+    const overdue=allTasks.filter(t=>t.due<todayStr&&t.due<weekStart);
+    if(overdue.length){
+      const odBanner=h("div",{style:{background:"rgba(226,68,92,.06)",borderRadius:"8px",padding:"8px 12px",marginBottom:"10px",borderLeft:"3px solid var(--red)"}});
+      odBanner.append(h("div",{style:{fontSize:"11px",fontWeight:"700",color:"var(--red)",textTransform:"uppercase",letterSpacing:".04em",marginBottom:"4px"}},"En retard"));
+      overdue.sort((a,b)=>a.due.localeCompare(b.due)).forEach(t=>{
+        const el=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",padding:"3px 0",fontSize:"12px",color:"var(--red)",cursor:"pointer"}});
+        const dot=h("div",{style:{width:"8px",height:"8px",borderRadius:"50%",background:t.status==="In Progress"?"var(--amber)":"var(--red)",flexShrink:"0",cursor:"pointer"}});
+        dot.addEventListener("click",ev=>{ev.stopPropagation();tog(t.type==="subtask"?findInTree(t.id,s.p)?.children?.[t.idx]?.id||t.id:t.id);});
+        const cn=t.name.replace(/@[\w\u00C0-\u024F]+\s*/g,"").replace(/!!/g,"").trim();
+        el.append(dot,h("span",{style:{flex:"1",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},cn),h("span",{style:{fontSize:"10px",color:"var(--muted)",whiteSpace:"nowrap"}},shortDt(t.due)));
+        el.addEventListener("click",()=>{s.calView=false;s.ed=t.id;s.nk="";s.noteEdit=false;R();});
+        el.addEventListener("mouseenter",()=>{el.style.background="rgba(226,68,92,.04)";});
+        el.addEventListener("mouseleave",()=>{el.style.background="none";});
+        odBanner.append(el);
+      });
+      w.append(odBanner);
+    }
+
+    // ── Swipe container for mobile ──
+    const calBody=h("div");
+    let swCalX=null;
+    calBody.addEventListener("touchstart",e=>{swCalX=e.touches[0].clientX;},{passive:true});
+    calBody.addEventListener("touchend",e=>{
+      if(swCalX===null)return;
+      const dx=e.changedTouches[0].clientX-swCalX;swCalX=null;
+      if(Math.abs(dx)<60)return;
+      if(dx<-60){s._calWeekOffset++;R();}
+      else if(dx>60){s._calWeekOffset--;R();}
+    });
 
     for(let d=0;d<7;d++){
       const day=new Date(startOfWeek);day.setDate(startOfWeek.getDate()+d);
@@ -2071,8 +2105,19 @@ function R(){
           const isDoneT=t.status==="Done"||t.status==="done";
           const {urgent}=parseTask(t.name);
           const taskEl=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",padding:"4px 8px 4px 38px",fontSize:"13px",cursor:"pointer",borderRadius:"6px",transition:"background .12s",color:isDoneT?"var(--muted)":urgent?"var(--red)":"var(--text)",textDecoration:isDoneT?"line-through":"none"}});
-          const dotColor=isDoneT?"var(--green)":t.status==="In Progress"||t.status==="progress"?"var(--amber)":"var(--blue)";
-          taskEl.append(h("div",{style:{width:"10px",height:"10px",borderRadius:"50%",background:dotColor,flexShrink:"0"}}));
+          const dotColor=isDoneT?"var(--green)":t.status==="In Progress"||t.status==="progress"?"var(--amber)":"#0086C0";
+          const dot=h("div",{style:{width:"10px",height:"10px",borderRadius:"50%",background:dotColor,flexShrink:"0",cursor:"pointer",transition:"transform .15s"}});
+          dot.addEventListener("mouseenter",()=>{dot.style.transform="scale(1.4)";});
+          dot.addEventListener("mouseleave",()=>{dot.style.transform="scale(1)";});
+          dot.addEventListener("click",ev=>{
+            ev.stopPropagation();
+            // Find actual task id for subtasks
+            if(t.type==="subtask"){
+              const parent=findInTree(t.id,s.p);
+              if(parent&&parent.children&&parent.children[t.idx])tog(parent.children[t.idx].id);
+            } else tog(t.id);
+          });
+          taskEl.append(dot);
           const cleanName=t.name.replace(/@[\w\u00C0-\u024F]+\s*/g,"").replace(/!!/g,"").trim();
           taskEl.append(h("span",{style:{flex:"1",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},cleanName));
           if(t.type==="subtask")taskEl.append(h("span",{style:{fontSize:"10px",color:"var(--muted)",whiteSpace:"nowrap"}},t.parentName.replace(/@[\w\u00C0-\u024F]+\s*/g,"").replace(/!!/g,"").trim()));
@@ -2084,13 +2129,22 @@ function R(){
           taskEl.addEventListener("mouseleave",()=>{taskEl.style.background="none";});
           dayRow.append(taskEl);
         });
+      } else {
+        // Empty day — click to add task with this date
+        const emptyBtn=h("div",{style:{padding:"4px 8px 4px 38px",fontSize:"12px",color:"var(--muted)",cursor:"pointer",borderRadius:"6px",transition:"all .15s",opacity:".5"}});
+        emptyBtn.textContent="+ Ajouter…";
+        emptyBtn.addEventListener("mouseenter",()=>{emptyBtn.style.opacity="1";emptyBtn.style.color="var(--accent)";});
+        emptyBtn.addEventListener("mouseleave",()=>{emptyBtn.style.opacity=".5";emptyBtn.style.color="var(--muted)";});
+        emptyBtn.addEventListener("click",()=>{
+          s.calView=false;s._qiOpen=true;s._qiDate=dayStr;R();
+        });
+        dayRow.append(emptyBtn);
       }
-      w.append(dayRow);
+      calBody.append(dayRow);
     }
+    w.append(calBody);
 
     // Week summary
-    const weekStart=localIso(startOfWeek);
-    const weekEndStr=localIso(endOfWeek);
     const weekTasks=allTasks.filter(t=>t.due>=weekStart&&t.due<=weekEndStr);
     const weekDone=weekTasks.filter(t=>t.status==="Done"||t.status==="done").length;
     w.append(h("div",{style:{textAlign:"center",fontSize:"11px",color:"var(--muted)",padding:"16px 0 0"}},weekTasks.length+" tâche"+(weekTasks.length!==1?"s":"")+" cette semaine"+(weekDone?" · "+weekDone+" terminée"+(weekDone>1?"s":""):"")));
@@ -2187,7 +2241,7 @@ function R(){
         }
       }
       document.removeEventListener("mousedown",s._outsideH,true);s._outsideH=null;
-      if(s._qiOpen&&!e.target.closest?.(".quick")){s._qiOpen=false;s.an="";}
+      if(s._qiOpen&&!e.target.closest?.(".quick")){s._qiOpen=false;s.an="";s._qiDate=null;}
       s.ed=null;s.qed=null;s.noteEdit=false;R();
     };
     setTimeout(()=>document.addEventListener("mousedown",s._outsideH,true),50);
