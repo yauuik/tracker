@@ -438,11 +438,11 @@ function dateBadge(dateStr,inherited){
   const now=new Date();now.setHours(0,0,0,0);
   const diff=Math.floor((dt-now)/(1000*60*60*24));
   let color="var(--sec)",bg="var(--hover)";
-  if(diff<0){color="var(--red)";bg="rgba(226,68,92,.08)";} // overdue
-  else if(diff===0){color="var(--red)";bg="rgba(226,68,92,.08)";} // today
-  else if(diff===1){color="var(--red)";bg="rgba(226,68,92,.08)";} // tomorrow
-  else if(diff<=3){color="#e67e22";bg="rgba(230,126,34,.08)";} // 2-3 days
-  else if(diff<=7){color="var(--amber)";bg="rgba(253,171,61,.1)";} // this week
+  if(diff<0){color="#fff";bg="var(--red)";} // overdue
+  else if(diff===0){color="#fff";bg="var(--red)";} // today
+  else if(diff===1){color="var(--red)";bg="rgba(226,68,92,.1)";} // tomorrow
+  else if(diff<=3){color="#e67e22";bg="rgba(230,126,34,.1)";} // 2-3 days
+  else if(diff<=7){color="var(--amber)";bg="rgba(253,171,61,.12)";} // this week
   const label=diff===0?"Aujourd'hui":diff===-1?"Hier":diff===1?"Demain":shortDt(dateStr);
   const ico=mkSvg("calendar","13");
   const bold=diff<=0;
