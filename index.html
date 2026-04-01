@@ -1967,14 +1967,14 @@ function R(){
       ov.addEventListener("mousedown",e=>{ovDown=(e.target===ov);});
       ov.addEventListener("mouseup",e=>{if(ovDown&&e.target===ov)ov.remove();ovDown=false;});
       ov.addEventListener("touchend",e=>{if(e.target===ov)ov.remove();});
-      const sheet=h("div",{className:"mod",style:{maxWidth:"100%",padding:"16px 16px calc(16px + env(safe-area-inset-bottom,0))"}});
+      const sheet=h("div",{className:"mod",style:{maxWidth:"100%",padding:"20px 16px calc(24px + env(safe-area-inset-bottom,0))",minHeight:"220px"}});
       sheet.addEventListener("click",e=>e.stopPropagation());
       // Grip
-      sheet.append(h("div",{style:{width:"36px",height:"4px",borderRadius:"2px",background:"var(--border)",margin:"0 auto 16px"}}));
+      sheet.append(h("div",{style:{width:"36px",height:"4px",borderRadius:"2px",background:"var(--border)",margin:"0 auto 20px"}}));
       // Title
-      sheet.append(h("div",{style:{fontSize:"15px",fontWeight:"600",color:"var(--text)",marginBottom:"12px"}},"Nouvelle tâche"));
+      sheet.append(h("div",{style:{fontSize:"16px",fontWeight:"600",color:"var(--text)",marginBottom:"16px"}},"Nouvelle tâche"));
       // Shared form
-      sheet.append(mkAddForm({fontSize:"16px",padding:"12px",btnPad:"10px 18px",btnFont:"14px",onDone:()=>{ov.remove();}}));
+      sheet.append(mkAddForm({fontSize:"16px",padding:"14px",btnPad:"12px 20px",btnFont:"14px",onDone:()=>{ov.remove();}}));
       ov.append(sheet);
       document.getElementById("app").append(ov);
       // Auto-focus after render
