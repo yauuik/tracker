@@ -444,8 +444,8 @@ function dateBadge(dateStr,inherited){
   else if(diff<=3){color="#e67e22";bg="rgba(230,126,34,.08)";} // 2-3 days
   else if(diff<=7){color="var(--amber)";bg="rgba(253,171,61,.1)";} // this week
   const label=diff===0?"Aujourd'hui":diff===-1?"Hier":diff===1?"Demain":shortDt(dateStr);
-  const ico=mkSvg("calendar","11");
-  const badge=h("span",{style:{fontSize:"10px",fontWeight:"600",color,background:bg,padding:"2px 7px",borderRadius:"8px",whiteSpace:"nowrap",lineHeight:"1.4",display:"inline-flex",alignItems:"center",gap:"3px",fontStyle:inherited?"italic":"normal",opacity:inherited?".7":"1"}});
+  const ico=mkSvg("calendar","13");
+  const badge=h("span",{style:{fontSize:"12px",fontWeight:"600",color,background:bg,padding:"3px 8px",borderRadius:"8px",whiteSpace:"nowrap",lineHeight:"1.4",display:"inline-flex",alignItems:"center",gap:"4px",fontStyle:inherited?"italic":"normal",opacity:inherited?".7":"1"}});
   badge.append(ico,document.createTextNode(label));
   return badge;
 }
