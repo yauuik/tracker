@@ -2157,10 +2157,8 @@ function R(){
 
   // ═══ LIST VIEW (existing sections) ═══
   if(ip.length){
-    const ipWrap=h("div",{style:{background:"rgba(253,171,61,.04)",borderRadius:"10px",padding:"6px 10px",margin:"0 -10px",overflow:"visible"}});
-    ipWrap.append(mkSec("En cours","#FDAB3D",ip.length));
-    const cards=h("div",{className:"cards"});ip.forEach(p=>cards.append(mkRow(p)));ipWrap.append(cards);
-    w.append(ipWrap);
+    w.append(mkSec("En cours","#FDAB3D",ip.length));
+    const cards=h("div",{className:"cards"});ip.forEach(p=>cards.append(mkRow(p)));w.append(cards);
   }
   if(td2.length){
     w.append(mkSec("À faire","#0086C0",td2.length));
