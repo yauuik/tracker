@@ -1694,6 +1694,18 @@ function mkAddForm(opts){
   addBtn.textContent="Ajouter";
   foot.append(addBtn);
   wrap.append(foot);
+  // Enter anywhere in form (date picker, buttons) → submit if text exists
+  wrap.addEventListener("keydown",e=>{
+    if(e.key==="Enter"&&!e.target.classList?.contains("ce-field")){
+      e.preventDefault();
+      if(s.an.trim()){
+        const n={id:gid(),name:capFirst(s.an.trim()),status:"To Do",children:[],note:""};
+        if(formDate)n.due=formDate;
+        s._newId=n.id;ps([n,...s.p]);s.an="";s.nk="";
+        if(opts.onDone)opts.onDone();
+      }
+    }
+  });
   return wrap;
 }
 
