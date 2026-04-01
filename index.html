@@ -1017,7 +1017,10 @@ function mkRow(p,depth){
   const isTodo=p.status==="To Do";
   const isOpen=s.ed===p.id;
   const row=h("div",{className:"row"});
-  if(depth>0)row.style.marginLeft=(depth*24)+"px";
+  if(depth>0){
+    row.style.marginLeft=(depth*20)+"px";
+    row.style.fontSize="13px";
+  }
   if(s._newId===p.id){row.style.animation="slideIn .25s ease";s._newId=null;}
   row.setAttribute("data-id",p.id);
 
@@ -1112,8 +1115,13 @@ function mkRow(p,depth){
   }
 
   // Checkbox
-  row.append(h("div",{className:"chk",onClick:e=>{e.stopPropagation();tog(p.id,e.altKey);}},
-    h("div",{className:bxCls(pSt)},bxTxt(pSt))));
+  const chkDiv=h("div",{className:"chk",onClick:e=>{e.stopPropagation();tog(p.id,e.altKey);}});
+  if(depth>0){chkDiv.style.width="36px";chkDiv.style.minHeight="36px";chkDiv.style.paddingTop="8px";}
+  const bxDiv=h("div",{className:bxCls(pSt)});
+  if(depth>0){bxDiv.style.width="17px";bxDiv.style.height="17px";bxDiv.style.fontSize="10px";bxDiv.style.borderWidth="1.5px";}
+  bxDiv.append(bxTxt(pSt));
+  chkDiv.append(bxDiv);
+  row.append(chkDiv);
 
   // ═══ EXPANDED STATE ═══
   if(isOpen){
@@ -1506,6 +1514,7 @@ function mkRow(p,depth){
 
   // ═══ COLLAPSED STATE ═══
   const c=h("div",{className:"crd",style:{cursor:isDone?"default":"pointer"}});
+  if(depth>0)c.style.padding="6px 10px";
   c.oncontextmenu=e=>{e.preventDefault();s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);R();};
   if(!isDone){
     c.addEventListener("click",e=>{
@@ -1536,6 +1545,7 @@ function mkRow(p,depth){
   } else {
     const nameEl=richTask(p.name,{});
     nameEl.className="crd-name"+(isDone?" x":"");
+    if(depth>0){nameEl.style.fontSize="13px";}
     if(s.sq)hlText(nameEl,s.sq);
     top.append(nameEl);
   }
