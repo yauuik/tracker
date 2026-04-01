@@ -1018,8 +1018,7 @@ function mkRow(p,depth){
   const isOpen=s.ed===p.id;
   const row=h("div",{className:"row"});
   if(depth>0){
-    row.style.marginLeft=(depth*28)+"px";
-    row.style.fontSize="13px";
+    row.style.marginLeft=(depth*40)+"px";
     row.style.borderLeft="2px solid var(--border)";
     row.style.paddingLeft="4px";
   }
@@ -1118,9 +1117,7 @@ function mkRow(p,depth){
 
   // Checkbox
   const chkDiv=h("div",{className:"chk",onClick:e=>{e.stopPropagation();tog(p.id,e.altKey);}});
-  if(depth>0){chkDiv.style.width="36px";chkDiv.style.minHeight="36px";chkDiv.style.paddingTop="8px";}
   const bxDiv=h("div",{className:bxCls(pSt)});
-  if(depth>0){bxDiv.style.width="17px";bxDiv.style.height="17px";bxDiv.style.fontSize="10px";bxDiv.style.borderWidth="1.5px";}
   bxDiv.append(bxTxt(pSt));
   chkDiv.append(bxDiv);
   row.append(chkDiv);
@@ -1516,7 +1513,6 @@ function mkRow(p,depth){
 
   // ═══ COLLAPSED STATE ═══
   const c=h("div",{className:"crd",style:{cursor:isDone?"default":"pointer"}});
-  if(depth>0)c.style.padding="6px 10px";
   c.oncontextmenu=e=>{e.preventDefault();s.sel.has(p.id)?s.sel.delete(p.id):s.sel.add(p.id);R();};
   if(!isDone){
     c.addEventListener("click",e=>{
@@ -1547,7 +1543,6 @@ function mkRow(p,depth){
   } else {
     const nameEl=richTask(p.name,{});
     nameEl.className="crd-name"+(isDone?" x":"");
-    if(depth>0){nameEl.style.fontSize="13px";}
     if(s.sq)hlText(nameEl,s.sq);
     top.append(nameEl);
   }
@@ -1611,7 +1606,7 @@ function mkRow(p,depth){
     wrap.append(row);
     // Toggle line
     const stExp=s.stOpen.has(p.id);
-    const indent=depth===0?68:68+(depth*28);
+    const indent=depth===0?68:68+(depth*40);
     const togLine=h("div",{style:{display:"flex",alignItems:"center",gap:"6px",padding:"0 0 2px "+indent+"px",cursor:"pointer",fontSize:"11px",color:"var(--muted)",userSelect:"none"}});
     const arrow=h("span",{style:{display:"inline-block",transition:"transform .2s",transform:stExp?"rotate(90deg)":"rotate(0)",fontSize:"11px"}});
     arrow.textContent="▶";
