@@ -979,7 +979,7 @@ function toast(msg,undoFn,duration){
 
 function onK(e){
   const ii=["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable;
-  if(e.key==="Escape"){if(s.cm)xcfm();else if(s.search){s.search=false;s.sq="";}else if(s._editTask){s._editTask=null;}else if(s.qed){s.qed=null;}else if(s.ed){s.ed=null;s.noteEdit=false;s._editTask=null;}else if(s.exp){s.exp=false;}else if(s.keys){s.keys=false;}else if(s.sett){s.sett=false;}else if(s.calc){s.calc=false;}else if(s.calView){s.calView=false;settings.calView=false;saveSettings(settings);}else if(s.sel.size)s.sel.clear();e.preventDefault();R();return;}
+  if(e.key==="Escape"){if(s.cm)xcfm();else if(s.search){s.search=false;s.sq="";}else if(s._editTask){s._editTask=null;}else if(s.qed){s.qed=null;}else if(s.ed){s.ed=null;s.noteEdit=false;s._editTask=null;}else if(s.exp){s.exp=false;}else if(s.keys){s.keys=false;}else if(s.sett){s.sett=false;}else if(s.calc){s.calc=false;save();}else if(s.calView){s.calView=false;settings.calView=false;saveSettings(settings);}else if(s.sel.size)s.sel.clear();e.preventDefault();R();return;}
   if(e.key==="Enter"){if(s.cm){e.preventDefault();s.cf?.();xcfm();return;}if(s.keys){e.preventDefault();s.keys=false;R();return;}if(s.ed&&!ii){e.preventDefault();s.ed=null;R();return;}}
   if(!ii&&!s.ed&&!s.exp&&!s.keys){
     if(e.key==="n"){e.preventDefault();document.querySelector(".quick .ce-field")?.focus();return;}
@@ -2404,10 +2404,10 @@ function rCalc(){
   const ov=h("div",{className:"ov"});
   let ovDown=false;
   ov.addEventListener("mousedown",e=>{ovDown=(e.target===ov);});
-  ov.addEventListener("mouseup",e=>{if(ovDown&&e.target===ov){s.calc=false;R();}ovDown=false;});
-  ov.addEventListener("touchend",e=>{if(e.target===ov){s.calc=false;R();}});
+  ov.addEventListener("mouseup",e=>{if(ovDown&&e.target===ov){s.calc=false;save();R();}ovDown=false;});
+  ov.addEventListener("touchend",e=>{if(e.target===ov){s.calc=false;save();R();}});
   const m=h("div",{className:"mod",style:{maxWidth:"360px"},onClick:e=>e.stopPropagation()});
-  m.append(h("div",{className:"mod-hdr"},h("h3",{},"Calculatrice horaire"),h("button",{className:"mod-x",onClick:()=>{s.calc=false;R();}},"✕")));
+  m.append(h("div",{className:"mod-hdr"},h("h3",{},"Calculatrice horaire"),h("button",{className:"mod-x",onClick:()=>{s.calc=false;save();R();}},"✕")));
 
   const WORK=7*60+10;// 7h10 en minutes
   let arrival=settings._calcArr||"08:00";
@@ -2475,7 +2475,7 @@ function rCalc(){
   function updateResult(){
     pause=calcPause();
     resultTime.textContent=calcEnd(arrival,pause);
-    settings._calcArr=arrival;settings._calcPauseStart=pauseStart;settings._calcPauseEnd=pauseEnd;settings._calcDep=departure;saveSettings(settings);save();
+    settings._calcArr=arrival;settings._calcPauseStart=pauseStart;settings._calcPauseEnd=pauseEnd;settings._calcDep=departure;saveSettings(settings);
     updatePauseInfo();
     // Overtime
     const ot=calcOvertime();
