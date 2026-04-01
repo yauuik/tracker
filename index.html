@@ -1968,7 +1968,7 @@ function R(){
       if(!s._dateSort)s._dateSort="asc";
       else if(s._dateSort==="asc")s._dateSort="desc";
       else s._dateSort=null;
-      settings._dateSort=s._dateSort;saveSettings(settings);
+      settings._dateSort=s._dateSort;saveSettings(settings);save();
       R();
     });
     sortRow.append(sortBtn);
