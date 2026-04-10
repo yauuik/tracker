@@ -1010,28 +1010,7 @@ function toast(msg,undoFn,duration){
 
 function onK(e){
   const ii=["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable;
-  if(e.key==="Escape"){if(s.cm)xcfm();else if(s._qiOpen){s._qiOpen=false;s.an="";s._qiDate=null;}else if(s.search){s.search=false;s.sq="";}else if(s._editTask){s._editTask=null;}else if(s.qed){s.qed=null;}else if(s.ed){s.ed=null;s.noteEdit=false;s._editTask=null;}else if(s.exp){s.exp=false;}else if(s.keys){s.keys=false;}else if(s.sett){s.sett=false;}else if(s.calc){
-      // Trigger commit via the calc module — save settings first
-      if(settings._calcDep&&settings._calcArr){
-        const [ah,am]=settings._calcArr.split(":").map(Number);
-        const [dh,dm]=settings._calcDep.split(":").map(Number);
-        if(!isNaN(ah)&&!isNaN(am)&&!isNaN(dh)&&!isNaN(dm)){
-          const [psh,psm]=(settings._calcPauseStart||"12:00").split(":").map(Number);
-          const [peh,pem]=(settings._calcPauseEnd||"12:30").split(":").map(Number);
-          const pause=Math.max(30,(peh*60+pem)-(psh*60+psm));
-          const worked=(dh*60+dm)-(ah*60+am)-pause;
-          const diff=worked-(7*60+10);
-          const today=localIso();
-          if(settings._otLastDate===today&&settings._otLastContrib!=null){
-            settings._otBalance=(settings._otBalance||0)-settings._otLastContrib+diff;
-          } else {
-            settings._otBalance=(settings._otBalance||0)+diff;
-          }
-          settings._otLastDate=today;settings._otLastContrib=diff;saveSettings(settings);
-        }
-      }
-      s.calc=false;save();
-    }else if(s.calView){s.calView=false;settings.calView=false;saveSettings(settings);}else if(s.sel.size)s.sel.clear();e.preventDefault();R();return;}
+  if(e.key==="Escape"){if(s.cm)xcfm();else if(s._qiOpen){s._qiOpen=false;s.an="";s._qiDate=null;}else if(s.search){s.search=false;s.sq="";}else if(s._editTask){s._editTask=null;}else if(s.qed){s.qed=null;}else if(s.ed){s.ed=null;s.noteEdit=false;s._editTask=null;}else if(s.exp){s.exp=false;}else if(s.keys){s.keys=false;}else if(s.sett){s.sett=false;}else if(s.calc){s.calc=false;save();}else if(s.calView){s.calView=false;settings.calView=false;saveSettings(settings);}else if(s.sel.size)s.sel.clear();e.preventDefault();R();return;}
   if(e.key==="Enter"){if(s.cm){e.preventDefault();s.cf?.();xcfm();return;}if(s.keys){e.preventDefault();s.keys=false;R();return;}if(s.ed&&!ii){e.preventDefault();s.ed=null;R();return;}}
   if(!ii&&!s.ed&&!s.exp&&!s.keys){
     if(e.key==="n"){e.preventDefault();s._qiOpen=true;R();requestAnimationFrame(()=>{document.querySelector(".quick .ce-field")?.focus();});return;}
@@ -2577,38 +2556,13 @@ function rSett(){
 }
 
 function rCalc(){
-  // Helper: commit today's overtime (prevents double-counting same day)
-  function commitOvertime(){
-    if(!settings._calcDep||!settings._calcArr)return;
-    const [ah,am]=settings._calcArr.split(":").map(Number);
-    const [dh,dm]=settings._calcDep.split(":").map(Number);
-    if(isNaN(ah)||isNaN(am)||isNaN(dh)||isNaN(dm))return;
-    // Compute pause
-    const [psh,psm]=(settings._calcPauseStart||"12:00").split(":").map(Number);
-    const [peh,pem]=(settings._calcPauseEnd||"12:30").split(":").map(Number);
-    const rawPause=(peh*60+pem)-(psh*60+psm);
-    const pause=Math.max(30,rawPause);
-    const worked=(dh*60+dm)-(ah*60+am)-pause;
-    const diff=worked-(7*60+10);
-    const today=localIso();
-    const prevBalance=settings._otBalance||0;
-    // If already committed today, replace the previous contribution instead of adding
-    if(settings._otLastDate===today&&settings._otLastContrib!=null){
-      settings._otBalance=prevBalance-settings._otLastContrib+diff;
-    } else {
-      settings._otBalance=prevBalance+diff;
-    }
-    settings._otLastDate=today;
-    settings._otLastContrib=diff;
-    saveSettings(settings);
-  }
   const ov=h("div",{className:"ov"});
   let ovDown=false;
   ov.addEventListener("mousedown",e=>{ovDown=(e.target===ov);});
-  ov.addEventListener("mouseup",e=>{if(ovDown&&e.target===ov){commitOvertime();s.calc=false;save();R();}ovDown=false;});
-  ov.addEventListener("touchend",e=>{if(e.target===ov){commitOvertime();s.calc=false;save();R();}});
+  ov.addEventListener("mouseup",e=>{if(ovDown&&e.target===ov){s.calc=false;save();R();}ovDown=false;});
+  ov.addEventListener("touchend",e=>{if(e.target===ov){s.calc=false;save();R();}});
   const m=h("div",{className:"mod",style:{maxWidth:"360px"},onClick:e=>e.stopPropagation()});
-  m.append(h("div",{className:"mod-hdr"},h("h3",{},"Calculatrice horaire"),h("button",{className:"mod-x",onClick:()=>{commitOvertime();s.calc=false;save();R();}},"✕")));
+  m.append(h("div",{className:"mod-hdr"},h("h3",{},"Calculatrice horaire"),h("button",{className:"mod-x",onClick:()=>{s.calc=false;save();R();}},"✕")));
 
   const WORK=7*60+10;// 7h10 en minutes
   let arrival=settings._calcArr||"08:00";
@@ -2828,27 +2782,43 @@ function rCalc(){
   });
   otRow.append(otLabel,otInput);
   otSection.append(otRow);
-  // Today's contribution preview
-  const otTodayInfo=h("div",{style:{fontSize:"10px",color:"var(--muted)",marginTop:"8px",textAlign:"center",fontFamily:"monospace"}});
+  // Validate button — explicit commit
+  const otValidBtn=h("button",{style:{width:"100%",padding:"10px 14px",borderRadius:"8px",border:"none",fontSize:"12px",fontWeight:"700",cursor:"pointer",fontFamily:"inherit",marginTop:"10px",transition:"all .15s"}});
   function updateOtInfo(){
     const ot=calcOvertime();
     const today=localIso();
     const already=settings._otLastDate===today;
-    if(ot){
-      otTodayInfo.textContent=(already?"Déjà ajouté aujourd'hui : ":"À ajouter à la fermeture : ")+ot.label;
-      otTodayInfo.style.color=already?"var(--muted)":(ot.diff>=0?"var(--green)":"var(--amber)");
+    if(!ot){
+      otValidBtn.textContent="Saisis ton départ pour valider";
+      otValidBtn.style.background="var(--border)";otValidBtn.style.color="var(--muted)";otValidBtn.disabled=true;otValidBtn.style.cursor="default";
+    } else if(already){
+      otValidBtn.textContent="✓ Journée déjà validée ("+fmtOt(settings._otLastContrib||0)+") — cliquer pour remplacer";
+      otValidBtn.style.background="var(--hover)";otValidBtn.style.color="var(--sec)";otValidBtn.disabled=false;otValidBtn.style.cursor="pointer";
     } else {
-      otTodayInfo.textContent="Saisis ton départ réel pour calculer";
+      otValidBtn.textContent="Valider la journée ("+ot.label+")";
+      otValidBtn.style.background=ot.diff>=0?"var(--green)":"var(--amber)";otValidBtn.style.color="#fff";otValidBtn.disabled=false;otValidBtn.style.cursor="pointer";
     }
   }
+  otValidBtn.addEventListener("click",()=>{
+    const ot=calcOvertime();if(!ot)return;
+    const today=localIso();
+    const prev=settings._otBalance||0;
+    if(settings._otLastDate===today&&settings._otLastContrib!=null){
+      settings._otBalance=prev-settings._otLastContrib+ot.diff;
+    } else {
+      settings._otBalance=prev+ot.diff;
+    }
+    settings._otLastDate=today;settings._otLastContrib=ot.diff;saveSettings(settings);save();
+    otInput.value=fmtOt(settings._otBalance);
+    otInput.style.color=settings._otBalance>=0?"var(--green)":"var(--red)";
+    toast("Journée validée : "+ot.label);
+    updateOtInfo();
+  });
   updateOtInfo();
-  otSection.append(otTodayInfo);
+  otSection.append(otValidBtn);
   m.append(otSection);
 
-  // Call updateOtInfo after each updateResult (re-wrap depIn listener)
-  const depInOrig=depIn.oninput;
-  const origUR=updateResult;
-  // Monkey-patch: replace direct calls — add observer via MutationObserver
+  // Observer: refresh button when result changes
   const obs=new MutationObserver(()=>updateOtInfo());
   obs.observe(resultSub,{childList:true,subtree:true,characterData:true});
 
